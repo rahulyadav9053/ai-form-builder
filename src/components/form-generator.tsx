@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useTransition, useEffect } from 'react';
+import React, { useState, useTransition } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,9 +9,9 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
-import { generateFormConfigAction } from '@/app/actions';
+import { generateFormConfigAction, saveFormConfigAction } from '@/app/actions';
 import type { FormConfig, FormElement } from '@/types/form';
-import { Download, Loader2, Plus, Sparkles, Trash2, Pencil } from 'lucide-react';
+import { Download, Loader2, Plus, Sparkles, Trash2, Pencil, Save } from 'lucide-react'; // Added Save icon
 import { useToast } from "@/hooks/use-toast";
 import { AnimatePresence, motion } from 'framer-motion';
 import { AddFieldDialog } from './add-field-dialog';
@@ -19,10 +19,10 @@ import { AddFieldDialog } from './add-field-dialog';
 export function FormGenerator() {
   const [prompt, setPrompt] = useState('');
   const [formConfig, setFormConfig] = useState<FormConfig | null>(null);
-  const [isPending, startTransition] = useTransition();
+  const [isGenerating, startGenerateTransition] = useTransition();
+  const [isSaving, startSavingTransition] = useTransition();
   const { toast } = useToast();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  // No longer need 'currentStep' as it's always one view
 
   const handleGenerate = async () => {
     if (!prompt.trim()) {
@@ -34,7 +34,7 @@ export function FormGenerator() {
       return;
     }
 
-    startTransition(async () => {
+    startGenerateTransition(async () => {
       setFormConfig(null); // Clear previous config before generating new one
       const result = await generateFormConfigAction({ prompt });
       if ('error' in result) {
@@ -45,7 +45,6 @@ export function FormGenerator() {
          });
       } else {
         setFormConfig(result.formConfig);
-        // No need to change step, just show the preview below
         toast({
            title: "Form Generated!",
            description: "Your form preview is ready below. You can now modify it.",
@@ -82,15 +81,13 @@ export function FormGenerator() {
  const handleRemoveElement = (indexToRemove: number) => {
     setFormConfig(prevConfig => {
         if (!prevConfig) return null;
-        // Correctly filter the array to create a new one without the element at indexToRemove
         const newConfig = prevConfig.filter((_, index) => index !== indexToRemove);
-        // If the form becomes empty after removal, set to null to hide the preview section
         return newConfig.length > 0 ? newConfig : null;
     });
      toast({
         title: "Field Removed",
         description: "The form field has been removed.",
-        variant: 'default', // Use default or a success variant
+        variant: 'default',
      });
   };
 
@@ -99,7 +96,35 @@ export function FormGenerator() {
      toast({
          title: "Field Added",
          description: `Field "${newElement.label}" has been added to the form.`,
-         variant: 'default', // Use default or a success variant
+         variant: 'default',
+     });
+ };
+
+ const handleSaveToFirebase = () => {
+     if (!formConfig || formConfig.length === 0) {
+         toast({
+           title: "No Configuration",
+           description: "Generate or add fields to the form before saving.",
+           variant: "destructive",
+         });
+         return;
+      }
+
+     startSavingTransition(async () => {
+       const result = await saveFormConfigAction(formConfig);
+       if ('error' in result) {
+         toast({
+            title: "Save Failed",
+            description: result.error,
+            variant: "destructive",
+         });
+       } else {
+         toast({
+            title: "Form Saved!",
+            description: `Configuration saved to Firebase with ID: ${result.docId}`,
+            variant: "default",
+         });
+       }
      });
  };
 
@@ -218,7 +243,6 @@ export function FormGenerator() {
                   {formComponent}
                </motion.div>
             );
-           // break; // No break needed after return
         default:
           console.warn(`Unsupported form element type: ${element.type}`);
            formComponent = (
@@ -275,10 +299,10 @@ export function FormGenerator() {
         <CardFooter className="flex justify-end">
           <Button
             onClick={handleGenerate}
-            disabled={isPending || !prompt.trim()}
+            disabled={isGenerating || !prompt.trim()}
             className="bg-accent hover:bg-accent/90 text-accent-foreground"
           >
-            {isPending ? (
+            {isGenerating ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Generating...
@@ -294,7 +318,7 @@ export function FormGenerator() {
       </Card>
 
       {/* Loading State Indicator - Shown below prompt card when pending */}
-      {isPending && (
+      {isGenerating && (
          <Card className="shadow-md animate-pulse">
            <CardHeader>
               <div className="h-6 bg-muted rounded w-3/4"></div>
@@ -320,6 +344,7 @@ export function FormGenerator() {
             <CardFooter className="flex justify-end space-x-3">
                  <div className="h-10 bg-muted rounded w-28"></div>
                  <div className="h-10 bg-muted rounded w-36"></div>
+                 <div className="h-10 bg-muted rounded w-32"></div> {/* Placeholder for Save button */}
             </CardFooter>
          </Card>
       )}
@@ -327,7 +352,7 @@ export function FormGenerator() {
 
       {/* Form Preview and Edit Section - Shown only when formConfig exists */}
       <AnimatePresence>
-        {formConfig && !isPending && ( // Don't show preview while loading
+        {formConfig && !isGenerating && ( // Don't show preview while loading
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -337,7 +362,6 @@ export function FormGenerator() {
           >
             <Card className="shadow-md transition-all duration-500 ease-out">
               <CardHeader>
-                {/* Remove the back button */}
                  <div>
                     <CardTitle className="text-2xl">Form Preview & Edit</CardTitle>
                     <CardDescription>Review the generated form. Add or remove fields as needed.</CardDescription>
@@ -366,14 +390,27 @@ export function FormGenerator() {
 
                  </form>
               </CardContent>
-              <CardFooter className="flex justify-end space-x-3">
-                 <Button variant="outline" onClick={() => setIsAddDialogOpen(true)}>
+              <CardFooter className="flex flex-wrap justify-end space-x-3 gap-y-2"> {/* Added flex-wrap and gap-y for better responsiveness */}
+                 <Button variant="outline" onClick={() => setIsAddDialogOpen(true)} disabled={isSaving}>
                      <Plus className="mr-2 h-4 w-4" />
                      Add Field
                  </Button>
-                 <Button onClick={downloadConfig} variant="default">
+                 <Button onClick={downloadConfig} variant="default" disabled={isSaving}>
                      <Download className="mr-2 h-4 w-4" />
                      Download JSON
+                 </Button>
+                 <Button onClick={handleSaveToFirebase} variant="secondary" disabled={isSaving}>
+                    {isSaving ? (
+                        <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Saving...
+                        </>
+                        ) : (
+                        <>
+                            <Save className="mr-2 h-4 w-4" />
+                            Save to Firebase
+                        </>
+                    )}
                  </Button>
                </CardFooter>
             </Card>

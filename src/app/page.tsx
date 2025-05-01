@@ -5,7 +5,7 @@ export default function Home() {
   return (
     <div className="container mx-auto p-4 md:p-8 min-h-screen flex flex-col">
       <header className="mb-8 text-center">
-         <h1 className="text-4xl font-bold text-primary">FormForge AI</h1>
+         <h1 className="text-4xl font-bold text-primary">AI Form Builder</h1>
          <p className="text-muted-foreground mt-2">
             Generate dynamic forms instantly using AI prompts.
          </p>
