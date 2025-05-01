@@ -11,12 +11,10 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { generateFormConfigAction } from '@/app/actions';
 import type { FormConfig, FormElement } from '@/types/form';
-import { Download, Loader2, Plus, Sparkles, Trash2, Pencil, ArrowLeft } from 'lucide-react';
+import { Download, Loader2, Plus, Sparkles, Trash2, Pencil } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { AnimatePresence, motion } from 'framer-motion';
 import { AddFieldDialog } from './add-field-dialog';
-
-type GeneratorStep = 'prompt' | 'preview';
 
 export function FormGenerator() {
   const [prompt, setPrompt] = useState('');
@@ -24,7 +22,7 @@ export function FormGenerator() {
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [currentStep, setCurrentStep] = useState<GeneratorStep>('prompt');
+  // No longer need 'currentStep' as it's always one view
 
   const handleGenerate = async () => {
     if (!prompt.trim()) {
@@ -47,10 +45,10 @@ export function FormGenerator() {
          });
       } else {
         setFormConfig(result.formConfig);
-        setCurrentStep('preview'); // Move to preview step
+        // No need to change step, just show the preview below
         toast({
            title: "Form Generated!",
-           description: "Your form preview is ready. You can now modify it.",
+           description: "Your form preview is ready below. You can now modify it.",
            variant: "default",
         });
       }
@@ -86,7 +84,8 @@ export function FormGenerator() {
         if (!prevConfig) return null;
         // Correctly filter the array to create a new one without the element at indexToRemove
         const newConfig = prevConfig.filter((_, index) => index !== indexToRemove);
-        return newConfig;
+        // If the form becomes empty after removal, set to null to hide the preview section
+        return newConfig.length > 0 ? newConfig : null;
     });
      toast({
         title: "Field Removed",
@@ -253,96 +252,96 @@ export function FormGenerator() {
 
   return (
     <div className="space-y-6">
-      {/* Step 1: Prompt Input */}
-      <AnimatePresence>
-        {currentStep === 'prompt' && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.3 }}
+      {/* Prompt Input Card - Always Visible */}
+      <Card className="shadow-md">
+        <CardHeader>
+          <CardTitle className="text-2xl flex items-center gap-2">
+             <Pencil className="text-primary" /> Describe Your Form
+          </CardTitle>
+          <CardDescription>
+            Enter a description of the form you need (e.g., "a user registration form with name, email, and password fields"). The AI will generate the structure.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Textarea
+            placeholder="e.g., Create a contact form with fields for name, email address, subject, and message."
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            rows={4}
+            className="resize-none bg-secondary focus:bg-background transition-colors"
+            aria-label="Form description prompt"
+          />
+        </CardContent>
+        <CardFooter className="flex justify-end">
+          <Button
+            onClick={handleGenerate}
+            disabled={isPending || !prompt.trim()}
+            className="bg-accent hover:bg-accent/90 text-accent-foreground"
           >
-            <Card className="shadow-md">
-              <CardHeader>
-                <CardTitle className="text-2xl flex items-center gap-2">
-                   <Pencil className="text-primary" /> Describe Your Form
-                </CardTitle>
-                <CardDescription>
-                  Enter a description of the form you need (e.g., "a user registration form with name, email, and password fields"). The AI will generate the structure.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Textarea
-                  placeholder="e.g., Create a contact form with fields for name, email address, subject, and message."
-                  value={prompt}
-                  onChange={(e) => setPrompt(e.target.value)}
-                  rows={4}
-                  className="resize-none bg-secondary focus:bg-background transition-colors"
-                  aria-label="Form description prompt"
-                />
-              </CardContent>
-              <CardFooter className="flex justify-end">
-                <Button
-                  onClick={handleGenerate}
-                  disabled={isPending || !prompt.trim()}
-                  className="bg-accent hover:bg-accent/90 text-accent-foreground"
-                >
-                  {isPending ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Generating...
-                    </>
-                  ) : (
-                     <>
-                       <Sparkles className="mr-2 h-4 w-4" />
-                       Generate Form
-                     </>
-                  )}
-                </Button>
-              </CardFooter>
-            </Card>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            {isPending ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Generating...
+              </>
+            ) : (
+               <>
+                 <Sparkles className="mr-2 h-4 w-4" />
+                 Generate Form
+               </>
+            )}
+          </Button>
+        </CardFooter>
+      </Card>
 
-      {/* Loading State Indicator */}
-      {isPending && currentStep === 'prompt' && (
+      {/* Loading State Indicator - Shown below prompt card when pending */}
+      {isPending && (
          <Card className="shadow-md animate-pulse">
            <CardHeader>
               <div className="h-6 bg-muted rounded w-3/4"></div>
               <div className="h-4 bg-muted rounded w-1/2 mt-2"></div>
            </CardHeader>
             <CardContent className="space-y-4">
-                <div className="h-20 bg-muted rounded"></div> {/* Placeholder for textarea */}
+                {/* Simulate a few loading form fields */}
+                <div className="flex items-end gap-2">
+                   <div className="flex-grow space-y-1">
+                       <div className="h-4 bg-muted rounded w-1/4"></div>
+                       <div className="h-10 bg-muted rounded"></div>
+                   </div>
+                   <div className="h-10 w-10 bg-muted rounded"></div>
+                </div>
+                 <div className="flex items-end gap-2">
+                   <div className="flex-grow space-y-1">
+                       <div className="h-4 bg-muted rounded w-1/3"></div>
+                       <div className="h-10 bg-muted rounded"></div>
+                   </div>
+                   <div className="h-10 w-10 bg-muted rounded"></div>
+                </div>
             </CardContent>
-            <CardFooter className="flex justify-end">
-                <div className="h-10 bg-muted rounded w-32"></div> {/* Placeholder for button */}
+            <CardFooter className="flex justify-end space-x-3">
+                 <div className="h-10 bg-muted rounded w-28"></div>
+                 <div className="h-10 bg-muted rounded w-36"></div>
             </CardFooter>
          </Card>
       )}
 
 
-      {/* Step 2: Form Preview and Edit */}
+      {/* Form Preview and Edit Section - Shown only when formConfig exists */}
       <AnimatePresence>
-        {currentStep === 'preview' && formConfig && (
+        {formConfig && !isPending && ( // Don't show preview while loading
           <motion.div
-            initial={{ opacity: 0, x: 100 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -100 }}
-            transition={{ duration: 0.5, type: 'spring', stiffness: 100 }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
+            key="form-preview-card" // Add key for AnimatePresence
           >
             <Card className="shadow-md transition-all duration-500 ease-out">
               <CardHeader>
-                <div className="flex justify-between items-start">
-                    <div>
-                      <CardTitle className="text-2xl">Form Preview & Edit</CardTitle>
-                      <CardDescription>Review the generated form. Add or remove fields as needed.</CardDescription>
-                    </div>
-                     <Button variant="outline" size="sm" onClick={() => setCurrentStep('prompt')}>
-                         <ArrowLeft className="mr-2 h-4 w-4" />
-                         Back to Prompt
-                     </Button>
-                </div>
+                {/* Remove the back button */}
+                 <div>
+                    <CardTitle className="text-2xl">Form Preview & Edit</CardTitle>
+                    <CardDescription>Review the generated form. Add or remove fields as needed.</CardDescription>
+                 </div>
               </CardHeader>
               <CardContent>
                  {/* Prevent form submission in preview */}
