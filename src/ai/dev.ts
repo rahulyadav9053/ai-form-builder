@@ -1,1 +1,2 @@
-// Flows will be imported for their side effects in this file.
+import '@/ai/flows/generate-form-config.ts';
+import '@/ai/flows/suggest-form-improvements.ts';
