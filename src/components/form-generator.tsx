@@ -11,15 +11,17 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { generateFormConfigAction } from '@/app/actions';
 import type { FormConfig, FormElement } from '@/types/form';
-import { Download, Loader2, Sparkles } from 'lucide-react';
+import { Download, Loader2, Plus, Sparkles, Trash2 } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { AnimatePresence, motion } from 'framer-motion';
+import { AddFieldDialog } from './add-field-dialog'; // Import the new dialog component
 
 export function FormGenerator() {
   const [prompt, setPrompt] = useState('');
   const [formConfig, setFormConfig] = useState<FormConfig | null>(null);
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 
   const handleGenerate = async () => {
     if (!prompt.trim()) {
@@ -75,13 +77,30 @@ export function FormGenerator() {
      });
  };
 
+ const handleRemoveElement = (indexToRemove: number) => {
+    if (!formConfig) return;
+    setFormConfig(prevConfig => prevConfig ? prevConfig.filter((_, index) => index !== indexToRemove) : null);
+     toast({
+        title: "Field Removed",
+        description: "The form field has been removed.",
+     });
+  };
+
+ const handleAddElement = (newElement: FormElement) => {
+     setFormConfig(prevConfig => prevConfig ? [...prevConfig, newElement] : [newElement]);
+     toast({
+         title: "Field Added",
+         description: `Field "${newElement.label}" has been added to the form.`,
+     });
+ };
+
 
   const renderFormElement = (element: FormElement, index: number) => {
     const key = `${element.name}-${index}`; // More robust key
 
      const variants = {
-        hidden: { opacity: 0, y: 20 },
-        visible: { opacity: 1, y: 0 },
+        hidden: { opacity: 0, y: 20, height: 0 },
+        visible: { opacity: 1, y: 0, height: 'auto' },
       };
 
      const motionProps = {
@@ -92,9 +111,10 @@ export function FormGenerator() {
         variants: variants,
         transition: { duration: 0.3, delay: index * 0.05 }, // Staggered animation
         layout: true, // Enable smooth layout changes
-        className:"mb-4 grid grid-cols-1 gap-2" // Grid layout for elements
+        className:"mb-4 grid grid-cols-[1fr_auto] items-end gap-2" // Grid layout for element + remove button
      };
 
+     let formComponent: React.ReactNode;
 
     switch (element.type.toLowerCase()) {
       case 'text':
@@ -104,8 +124,8 @@ export function FormGenerator() {
       case 'date':
       case 'tel':
       case 'url':
-        return (
-           <motion.div {...motionProps}>
+        formComponent = (
+           <div className="grid grid-cols-1 gap-1">
             <Label htmlFor={key}>{element.label}{element.required && '*'}</Label>
             <Input
                 id={key}
@@ -115,11 +135,12 @@ export function FormGenerator() {
                 required={element.required}
                 className="bg-secondary"
              />
-          </motion.div>
+          </div>
         );
+        break;
       case 'textarea':
-         return (
-            <motion.div {...motionProps}>
+         formComponent = (
+            <div className="grid grid-cols-1 gap-1">
              <Label htmlFor={key}>{element.label}{element.required && '*'}</Label>
              <Textarea
                  id={key}
@@ -128,11 +149,12 @@ export function FormGenerator() {
                  required={element.required}
                   className="bg-secondary"
              />
-           </motion.div>
+           </div>
          );
+         break;
       case 'select':
-        return (
-           <motion.div {...motionProps}>
+        formComponent = (
+           <div className="grid grid-cols-1 gap-1">
             <Label htmlFor={key}>{element.label}{element.required && '*'}</Label>
             <Select name={element.name} required={element.required}>
               <SelectTrigger id={key} className="bg-secondary">
@@ -146,11 +168,12 @@ export function FormGenerator() {
                 ))}
               </SelectContent>
             </Select>
-          </motion.div>
+          </div>
         );
+        break;
        case 'radio':
-         return (
-           <motion.fieldset {...motionProps} className="space-y-2">
+         formComponent = (
+           <fieldset className="space-y-2 grid grid-cols-1 gap-1">
              <legend className="text-sm font-medium">{element.label}{element.required && '*'}</legend>
              <RadioGroup name={element.name} required={element.required}>
                {(element.options || []).map((option, i) => (
@@ -160,33 +183,57 @@ export function FormGenerator() {
                  </div>
                ))}
              </RadioGroup>
-           </motion.fieldset>
+           </fieldset>
          );
+         break;
        case 'checkbox':
-         // Assuming single checkbox, not a group based on typical usage
-         return (
-             <motion.div {...motionProps} className="flex items-center space-x-2 pt-2">
+         formComponent = (
+             <div className="flex items-center space-x-2 pt-2">
              <Checkbox id={key} name={element.name} required={element.required} />
              <Label htmlFor={key} className="font-normal">{element.label}{element.required && '*'}</Label>
-           </motion.div>
+           </div>
          );
+         break;
        case 'submit': // Handle potential submit button generation
-         return (
-            <motion.div {...motionProps} className="pt-4">
+         formComponent = (
+            <div className="pt-4 col-span-full"> {/* Make submit span full width */}
               <Button type="submit" className="w-full bg-accent hover:bg-accent/90">
                  {element.label || 'Submit'}
               </Button>
-            </motion.div>
+            </div>
           );
+          break;
       default:
         console.warn(`Unsupported form element type: ${element.type}`);
-         return (
-            <motion.div {...motionProps}>
+         formComponent = (
+            <div className="grid grid-cols-1 gap-1">
               <Label htmlFor={key}>{element.label} (Unsupported Type: {element.type})</Label>
               <Input id={key} name={element.name} disabled className="bg-secondary" />
-            </motion.div>
+            </div>
           );
+          break; // Added break here
     }
+
+     // Wrap the element and the remove button in the motion div
+     return (
+        <motion.div {...motionProps}>
+             {formComponent}
+             {/* Add remove button only if it's not a submit button */}
+             {element.type.toLowerCase() !== 'submit' && (
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleRemoveElement(index)}
+                    className="text-destructive hover:bg-destructive/10 h-10 w-10" // Match input height
+                    aria-label={`Remove ${element.label} field`}
+                 >
+                   <Trash2 className="h-4 w-4" />
+                 </Button>
+             )}
+             {/* Add placeholder for submit button alignment */}
+              {element.type.toLowerCase() === 'submit' && <div className="w-10"></div>}
+        </motion.div>
+      );
   };
 
   return (
@@ -255,14 +302,16 @@ export function FormGenerator() {
         <Card className="shadow-md transition-all duration-500 ease-out">
           <CardHeader>
             <CardTitle className="text-2xl">Generated Form Preview</CardTitle>
-            <CardDescription>This is how your generated form looks. Fill it out or download the configuration.</CardDescription>
+            <CardDescription>This is how your generated form looks. Fill it out, modify it, or download the configuration.</CardDescription>
           </CardHeader>
           <CardContent>
              <form className="space-y-4">
                 <AnimatePresence>
                  {formConfig.map(renderFormElement)}
-                 {/* Add a default submit if none generated */}
-                 {!formConfig.some(el => el.type.toLowerCase() === 'submit') && (
+                 </AnimatePresence>
+
+                {/* Add a default submit if none generated and not in edit mode */}
+                {!formConfig.some(el => el.type.toLowerCase() === 'submit') && (
                       <motion.div
                         key="default-submit"
                          initial={{ opacity: 0 }}
@@ -273,11 +322,23 @@ export function FormGenerator() {
                        <Button type="submit" className="w-full">Submit</Button>
                      </motion.div>
                  )}
-                 </AnimatePresence>
+
              </form>
           </CardContent>
+          <CardFooter className="justify-end">
+             <Button variant="outline" onClick={() => setIsAddDialogOpen(true)}>
+                 <Plus className="mr-2 h-4 w-4" />
+                 Add Field
+             </Button>
+           </CardFooter>
         </Card>
       )}
+
+       <AddFieldDialog
+         isOpen={isAddDialogOpen}
+         onClose={() => setIsAddDialogOpen(false)}
+         onAddField={handleAddElement}
+       />
     </div>
   );
 }
