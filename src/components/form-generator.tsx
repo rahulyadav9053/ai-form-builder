@@ -11,10 +11,11 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { generateFormConfigAction, saveFormConfigAction } from '@/app/actions';
 import type { FormConfig, FormElement } from '@/types/form';
-import { Download, Loader2, Plus, Sparkles, Trash2, Pencil, Save } from 'lucide-react'; // Added Save icon
+import { Download, Loader2, Plus, Sparkles, Trash2, Pencil, Save, Link as LinkIcon } from 'lucide-react'; // Added Save, LinkIcon
 import { useToast } from "@/hooks/use-toast";
 import { AnimatePresence, motion } from 'framer-motion';
 import { AddFieldDialog } from './add-field-dialog';
+import Link from 'next/link'; // Import NextLink
 
 export function FormGenerator() {
   const [prompt, setPrompt] = useState('');
@@ -23,6 +24,7 @@ export function FormGenerator() {
   const [isSaving, startSavingTransition] = useTransition();
   const { toast } = useToast();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [lastSavedFormId, setLastSavedFormId] = useState<string | null>(null);
 
   const handleGenerate = async () => {
     if (!prompt.trim()) {
@@ -36,6 +38,7 @@ export function FormGenerator() {
 
     startGenerateTransition(async () => {
       setFormConfig(null); // Clear previous config before generating new one
+      setLastSavedFormId(null); // Clear last saved ID when generating new form
       const result = await generateFormConfigAction({ prompt });
       if ('error' in result) {
          toast({
@@ -82,6 +85,8 @@ export function FormGenerator() {
     setFormConfig(prevConfig => {
         if (!prevConfig) return null;
         const newConfig = prevConfig.filter((_, index) => index !== indexToRemove);
+        // Reset saved ID if config changes after saving
+        setLastSavedFormId(null);
         return newConfig.length > 0 ? newConfig : null;
     });
      toast({
@@ -93,6 +98,8 @@ export function FormGenerator() {
 
  const handleAddElement = (newElement: FormElement) => {
      setFormConfig(prevConfig => prevConfig ? [...prevConfig, newElement] : [newElement]);
+      // Reset saved ID if config changes after saving
+      setLastSavedFormId(null);
      toast({
          title: "Field Added",
          description: `Field "${newElement.label}" has been added to the form.`,
@@ -118,12 +125,23 @@ export function FormGenerator() {
             description: result.error,
             variant: "destructive",
          });
+          setLastSavedFormId(null);
        } else {
-         toast({
-            title: "Form Saved!",
-            description: `Configuration saved to Firebase with ID: ${result.docId}`,
-            variant: "default",
-         });
+          setLastSavedFormId(result.docId || null); // Store the saved ID
+          const formUrl = result.docId ? `/${result.docId}` : '#'; // Construct URL
+          toast({
+             title: "Form Saved!",
+             description: (
+               <div>
+                 Configuration saved to Firebase with ID: {result.docId}.<br />
+                 <Link href={formUrl} target="_blank" rel="noopener noreferrer" className="text-primary underline hover:text-primary/80 inline-flex items-center gap-1">
+                   View Live Form <LinkIcon className="h-3 w-3" />
+                 </Link>
+               </div>
+             ),
+             variant: "default",
+             duration: 10000, // Keep toast longer to allow clicking link
+          });
        }
      });
  };
@@ -300,7 +318,7 @@ export function FormGenerator() {
           <Button
             onClick={handleGenerate}
             disabled={isGenerating || !prompt.trim()}
-            className="bg-accent hover:bg-accent/90 text-accent-foreground"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground" // Changed generate button to primary
           >
             {isGenerating ? (
               <>
@@ -364,7 +382,7 @@ export function FormGenerator() {
               <CardHeader>
                  <div>
                     <CardTitle className="text-2xl">Form Preview & Edit</CardTitle>
-                    <CardDescription>Review the generated form. Add or remove fields as needed.</CardDescription>
+                    <CardDescription>Review the generated form. Add or remove fields, then save to get a shareable link.</CardDescription>
                  </div>
               </CardHeader>
               <CardContent>
@@ -395,11 +413,11 @@ export function FormGenerator() {
                      <Plus className="mr-2 h-4 w-4" />
                      Add Field
                  </Button>
-                 <Button onClick={downloadConfig} variant="default" disabled={isSaving}>
+                 <Button onClick={downloadConfig} variant="ghost" disabled={isSaving}> {/* Changed Download to ghost */}
                      <Download className="mr-2 h-4 w-4" />
                      Download JSON
                  </Button>
-                 <Button onClick={handleSaveToFirebase} variant="secondary" disabled={isSaving}>
+                 <Button onClick={handleSaveToFirebase} variant="secondary" disabled={isSaving || !!lastSavedFormId} className="bg-accent hover:bg-accent/90 text-accent-foreground"> {/* Save is now accent color, disable if already saved */}
                     {isSaving ? (
                         <>
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -408,7 +426,7 @@ export function FormGenerator() {
                         ) : (
                         <>
                             <Save className="mr-2 h-4 w-4" />
-                            Save to Firebase
+                             {lastSavedFormId ? 'Saved!' : 'Save & Get Link'}
                         </>
                     )}
                  </Button>
