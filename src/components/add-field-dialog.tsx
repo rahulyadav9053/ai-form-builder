@@ -125,11 +125,23 @@ export function AddFieldDialog({ isOpen, onClose, onAddField }: AddFieldDialogPr
         <DialogHeader>
           <DialogTitle>Add New Form Field</DialogTitle>
           <DialogDescription>
-            Configure the details for the new field you want to add to the form.
+            Configure details for the form field.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <div className="grid gap-4 py-4">
+          <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="label" className="text-right">
+                Label*
+              </Label>
+              <Input
+                id="label"
+                value={label}
+                onChange={handleLabelChange}
+                className="col-span-3"
+                required
+              />
+            </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="fieldType" className="text-right">
                 Field Type*
@@ -147,18 +159,7 @@ export function AddFieldDialog({ isOpen, onClose, onAddField }: AddFieldDialogPr
                  </SelectContent>
                </Select>
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="label" className="text-right">
-                Label*
-              </Label>
-              <Input
-                id="label"
-                value={label}
-                onChange={handleLabelChange}
-                className="col-span-3"
-                required
-              />
-            </div>
+
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="name" className="text-right">
                 Name*
@@ -214,10 +215,10 @@ export function AddFieldDialog({ isOpen, onClose, onAddField }: AddFieldDialogPr
              </div>
           </div>
           <DialogFooter>
+            <Button type="submit">Add Field</Button>
             <Button type="button" variant="outline" onClick={handleClose}>
               Cancel
             </Button>
-            <Button type="submit">Add Field</Button>
           </DialogFooter>
         </form>
       </DialogContent>

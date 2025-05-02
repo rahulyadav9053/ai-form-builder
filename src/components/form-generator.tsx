@@ -7,15 +7,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { generateFormConfigAction, createEmptyFormAction, navigateToEditPage } from '@/app/actions'; // Import createEmptyFormAction
-import { Loader2, Plus, Sparkles, Hammer, Pencil } from 'lucide-react';
+import { Loader2, Sparkles, Hammer, Pencil } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 
 
-// Enum to manage the current mode - Simplified for this component
 enum GeneratorMode {
     Idle,
     AI_Generating,
-    Manual_Creating, // State while waiting for manual create action
+    Manual_Creating,
 }
 
 
@@ -51,11 +50,11 @@ export function FormGenerator() {
          });
          setMode(GeneratorMode.Idle); // Revert to idle on error
       } else {
-        toast({
-           title: "Form Generated & Saved!",
-           description: `Redirecting you to the editor... (ID: ${result.docId})`,
-           variant: "default",
-        });
+        // toast({
+        //    title: "Form Generated & Saved!",
+        //    description: `Redirecting you to the editor... (ID: ${result.docId})`,
+        //    variant: "default",
+        // });
          // Redirect to the new edit page
          router.push(`/edit/${result.docId}`);
          // Optional: Reset prompt after successful generation?
@@ -95,7 +94,6 @@ export function FormGenerator() {
 
   return (
     <div className="space-y-6 w-full max-w-3xl">
-      {/* Prompt Input Card */}
       <Card className="shadow-md">
         <CardHeader>
           <CardTitle className="text-2xl flex items-center gap-2">
@@ -154,16 +152,7 @@ export function FormGenerator() {
             Click here to start creating your form from scratch in the editor.
           </CardDescription>
         </CardHeader>
-         {/* Optional: Add a spinner inside if isCreatingManual */}
-         {/* {isCreatingManual && (
-            <CardContent className="flex justify-center items-center p-4">
-               <Loader2 className="h-6 w-6 animate-spin text-accent" />
-            </CardContent>
-         )} */}
       </Card>
-
-      {/* Remove the preview/edit section entirely from this component */}
-
     </div>
   );
 }

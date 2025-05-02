@@ -411,7 +411,7 @@ export default function DashboardPage() {
                            <TableCell className="text-right">
                               {/* Action Buttons */}
                               <div className="flex justify-end gap-1">
-                                 <Button variant="ghost" size="icon" asChild className="h-7 w-7 text-primary hover:bg-primary/10" title="View Live Form">
+                                 <Button disabled={form.responseCount == 0} variant="ghost" size="icon" asChild className="h-7 w-7 text-primary hover:bg-primary/10" title="View Live Form">
                                     <Link href={`/${form.formId}`} target="_blank" rel="noopener noreferrer">
                                        <Eye className="h-4 w-4" />
                                     </Link>

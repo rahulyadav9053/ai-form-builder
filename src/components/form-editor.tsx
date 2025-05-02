@@ -68,7 +68,7 @@ export function FormEditor({ initialConfig, formId }: FormEditorProps) {
          });
          return;
       }
-      if (!hasChanges) {
+      if (!hasChanges && formConfig.length == 0) {
            toast({
                title: "No Changes",
                description: "No changes detected to save.",
@@ -266,11 +266,8 @@ export function FormEditor({ initialConfig, formId }: FormEditorProps) {
           {/* Maybe remove CardHeader/Description or simplify */}
           <CardHeader>
              <CardTitle className="text-2xl flex items-center gap-2">
-                <Edit className="h-5 w-5 text-primary" /> Edit Form Fields
+                <Edit className="h-5 w-5 text-primary" /> Add | Edit Form Fields
              </CardTitle>
-             <CardDescription>
-                Add, remove, or reorder (future feature) form fields. Remember to save your changes.
-             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
              <AnimatePresence initial={false}>
@@ -291,7 +288,7 @@ export function FormEditor({ initialConfig, formId }: FormEditorProps) {
              <Button
                 onClick={handleSaveChanges}
                 variant="default" // Use default variant for save
-                disabled={isSaving}//!hasChanges}
+                disabled={isSaving || formConfig.length == 0}//!hasChanges}
                 className="min-w-[120px]" // Ensure button width is consistent
              >
                 {isSaving ? (
