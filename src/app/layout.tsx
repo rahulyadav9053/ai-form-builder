@@ -1,7 +1,9 @@
+
 import type {Metadata} from 'next';
-import {Geist, Geist_Mono} from 'next/font/google';
+import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
-import { Toaster } from "@/components/ui/toaster"
+import { Toaster } from "@/components/ui/toaster";
+import Providers from './providers'; // Import the Providers component
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -14,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'FormForge AI',
-  description: 'Generate forms dynamically using AI',
+  title: 'AI - Dynamic Form Generator', // Updated Title
+  description: 'Generate, build, and manage dynamic forms instantly using AI.', // Updated description
 };
 
 export default function RootLayout({
@@ -25,9 +27,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        {children}
-        <Toaster />
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}>
+        <Providers> {/* Wrap children with Providers */}
+            {children}
+            <Toaster />
+        </Providers>
       </body>
     </html>
   );

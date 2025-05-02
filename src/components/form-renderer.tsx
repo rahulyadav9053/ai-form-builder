@@ -1,6 +1,7 @@
+
 "use client";
 
-import React, { useState, useTransition } from 'react';
+import React, { useState, useTransition, useEffect } from 'react';
 import { useForm, Controller, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -115,6 +116,13 @@ export function FormRenderer({ formConfig, formId }: FormRendererProps) {
   const { toast } = useToast();
   const [isSubmitting, startSubmitTransition] = useTransition();
   const [submissionSuccess, setSubmissionSuccess] = useState(false);
+  const [startTime, setStartTime] = useState<number | null>(null); // State for start time
+
+  // Record start time on mount (client-side only)
+  useEffect(() => {
+    setStartTime(Date.now());
+  }, []);
+
 
   // Generate the schema based on the config
   const formSchema = React.useMemo(() => generateSchema(formConfig), [formConfig]);
@@ -136,8 +144,12 @@ export function FormRenderer({ formConfig, formId }: FormRendererProps) {
 
 
   const onSubmit: SubmitHandler<FormData> = (data) => {
+    const endTime = Date.now();
+    const durationMs = startTime ? endTime - startTime : undefined; // Calculate duration in milliseconds
+
     startSubmitTransition(async () => {
-      const result = await saveFormResponseAction({ formId, responseData: data });
+      // Pass durationMs to the action
+      const result = await saveFormResponseAction({ formId, responseData: data, durationMs });
       if ('error' in result) {
         toast({
           title: 'Submission Failed',
@@ -148,10 +160,13 @@ export function FormRenderer({ formConfig, formId }: FormRendererProps) {
         setSubmissionSuccess(true);
         toast({
           title: 'Form Submitted Successfully!',
-          description: `Your response has been recorded (ID: ${result.responseId}).`,
+          description: `Your response has been recorded (ID: ${result.responseId}). Time taken: ${durationMs ? (durationMs / 1000).toFixed(1) + 's' : 'N/A'}`,
           variant: 'default',
+          duration: 10000, // Keep toast longer
         });
         // Optionally reset the form: form.reset();
+        // Maybe reset startTime if allowing multiple submissions?
+        // setStartTime(Date.now());
       }
     });
   };
@@ -167,7 +182,7 @@ export function FormRenderer({ formConfig, formId }: FormRendererProps) {
              Thank you! Your response has been successfully submitted.
            </CardDescription>
            {/* Optionally add a button to submit another response or go back */}
-            <Button onClick={() => setSubmissionSuccess(false)} className="mt-4">Submit another response</Button>
+            <Button onClick={() => { form.reset(); setSubmissionSuccess(false); setStartTime(Date.now()); }} className="mt-4">Submit another response</Button>
          </CardContent>
        </Card>
      );
@@ -304,7 +319,7 @@ export function FormRenderer({ formConfig, formId }: FormRendererProps) {
             {formConfig.filter(el => el.type.toLowerCase() !== 'submit').map(renderFormElement)}
           </CardContent>
           <CardFooter className="flex justify-end p-6 pt-4">
-            <Button type="submit" disabled={isSubmitting} className="bg-primary hover:bg-primary/90">
+            <Button type="submit" disabled={isSubmitting || startTime === null} className="bg-primary hover:bg-primary/90">
               {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

@@ -2,6 +2,7 @@ import { getFormConfigAction } from '@/app/actions';
 import { FormRenderer } from '@/components/form-renderer';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertTriangle } from 'lucide-react';
+import { Footer } from '@/components/footer';
 
 interface FormPageProps {
   params: {
@@ -42,9 +43,7 @@ export default async function FormPage({ params }: FormPageProps) {
       <main className="w-full max-w-3xl">
         <FormRenderer formConfig={result.formConfig} formId={formId} />
       </main>
-       <footer className="text-center mt-12 py-4 text-sm text-muted-foreground">
-          Powered by FormForge AI
-       </footer>
+       <Footer />
     </div>
   );
 }

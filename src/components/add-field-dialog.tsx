@@ -24,6 +24,7 @@ interface AddFieldDialogProps {
   onAddField: (newElement: FormElement) => void;
 }
 
+// Expanded list of common HTML input types + custom types
 const availableFieldTypes = [
   "text", "email", "password", "number", "date", "tel", "url",
   "textarea", "select", "radio", "checkbox",
@@ -42,18 +43,15 @@ export function AddFieldDialog({ isOpen, onClose, onAddField }: AddFieldDialogPr
     // Generate a basic name based on the label if name is empty
     const value = e.target.value;
     setName(value);
-    if (!name && label) {
-        // Simple slugify: lowercase, replace spaces with underscores, remove non-alphanumeric
-        const generatedName = label.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
-        setName(generatedName);
-    }
+    // Removed auto-generation from name change to allow manual override
+    // If you want auto-gen when name is cleared, add specific logic here.
   };
 
    const handleLabelChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       const newLabel = e.target.value;
       setLabel(newLabel);
-      // Auto-generate name based on label if name is empty or was auto-generated previously
-      if (!name || name === label.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '')) {
+      // Auto-generate name based on label only if name is currently empty
+      if (!name.trim()) {
          const generatedName = newLabel.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
          setName(generatedName);
       }
@@ -70,6 +68,17 @@ export function AddFieldDialog({ isOpen, onClose, onAddField }: AddFieldDialogPr
       return;
     }
 
+     // Validate name format (simple: no spaces, starts with letter/underscore)
+     if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(name)) {
+        toast({
+            title: "Invalid Name",
+            description: "Name must start with a letter or underscore, and contain only letters, numbers, or underscores.",
+            variant: "destructive",
+        });
+       return;
+     }
+
+
      if ((fieldType === 'select' || fieldType === 'radio') && !options.trim()) {
         toast({
             title: "Missing Options",
@@ -83,7 +92,7 @@ export function AddFieldDialog({ isOpen, onClose, onAddField }: AddFieldDialogPr
       type: fieldType,
       label,
       name,
-      placeholder: placeholder || undefined,
+      placeholder: placeholder.trim() || undefined, // Ensure empty strings become undefined
       required: isRequired,
       options: (fieldType === 'select' || fieldType === 'radio')
                ? options.split(',').map(opt => opt.trim()).filter(Boolean)
@@ -123,9 +132,9 @@ export function AddFieldDialog({ isOpen, onClose, onAddField }: AddFieldDialogPr
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="fieldType" className="text-right">
-                Field Type
+                Field Type*
               </Label>
-              <Select value={fieldType} onValueChange={setFieldType}>
+              <Select value={fieldType} onValueChange={setFieldType} required>
                  <SelectTrigger id="fieldType" className="col-span-3">
                    <SelectValue placeholder="Select field type" />
                  </SelectTrigger>
@@ -160,7 +169,7 @@ export function AddFieldDialog({ isOpen, onClose, onAddField }: AddFieldDialogPr
                 onChange={handleNameChange}
                 className="col-span-3"
                 required
-                placeholder="e.g., user_name (auto-generated)"
+                placeholder="e.g., user_name"
               />
             </div>
              <div className="grid grid-cols-4 items-center gap-4">
