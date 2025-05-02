@@ -37,7 +37,7 @@ export default async function FormPage({ params }: FormPageProps) {
        <header className="mb-8 text-center w-full max-w-3xl">
          <h1 className="text-3xl font-bold text-primary">Complete the Form</h1>
          <p className="text-muted-foreground mt-2">
-            Please fill out the details below. Form ID: {formId}
+            Please fill out the details below.
          </p>
        </header>
       <main className="w-full max-w-3xl">
@@ -51,7 +51,7 @@ export default async function FormPage({ params }: FormPageProps) {
 // Optional: Add metadata generation
 export async function generateMetadata({ params }: FormPageProps) {
   return {
-    title: `Form ${params.formId} | FormForge AI`,
+    title: `Form Submission ${params.formId}`,
     description: `Fill out the form with ID ${params.formId}.`,
   };
 }

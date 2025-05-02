@@ -48,17 +48,17 @@ export default async function FormEditPage({ params }: FormEditPageProps) {
     <div className="container mx-auto p-4 md:p-8 min-h-screen flex flex-col">
        <header className="mb-8 flex justify-between items-center">
           <div>
-             <h1 className="text-3xl font-bold text-primary">AI-cellerators Form Editor</h1>
+             <h1 className="text-3xl font-bold text-primary text-center">AI-cellerators Form Editor</h1>
              {/* <p className="text-muted-foreground mt-1">
                Modify your form fields and save the configuration. Form ID: {formId}
              </p> */}
           </div>
           <div className="flex gap-2">
-             <Button variant="outline" size="sm" asChild>
+             {/* <Button variant="outline" size="sm" asChild>
                 <Link href={`/${formId}`} target="_blank" rel="noopener noreferrer">
                    Preview Live Form
                 </Link>
-             </Button>
+             </Button> */}
              <Button variant="outline" size="sm" asChild>
                 <Link href="/">
                    <ArrowLeft className="mr-2 h-4 w-4" /> Back to Generator

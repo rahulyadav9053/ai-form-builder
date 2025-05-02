@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useTransition, useEffect } from 'react';
@@ -6,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Select, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
@@ -107,7 +106,7 @@ export function FormEditor({ initialConfig, formId }: FormEditorProps) {
  };
 
  const renderFormElement = (element: FormElement, index: number) => {
-    const key = `${element.name}-${index}-${element.type}`; // More robust key
+  const key = `${element.name}-${index}-${element.type}`; // More robust key
 
      const variants = {
         hidden: { opacity: 0, y: -10, height: 0 },
@@ -292,7 +291,7 @@ export function FormEditor({ initialConfig, formId }: FormEditorProps) {
              <Button
                 onClick={handleSaveChanges}
                 variant="default" // Use default variant for save
-                disabled={isSaving || !hasChanges}
+                disabled={isSaving}//!hasChanges}
                 className="min-w-[120px]" // Ensure button width is consistent
              >
                 {isSaving ? (
