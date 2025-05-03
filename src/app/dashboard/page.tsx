@@ -423,77 +423,134 @@ export default function DashboardPage() {
       <section className="flex-grow">
         <Card className="shadow-lg border border-border/50 h-full flex flex-col">
           <CardHeader className="border-b border-border/50">
-            <CardTitle>Form Details & Submissions</CardTitle>
-            <CardDescription>
-              List of generated forms, their response counts, and average submission times.
-            </CardDescription>
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5 text-primary" />
+              Form Submissions
+            </CardTitle>
           </CardHeader>
-           <CardContent className={`p-0 flex-grow ${responsesPerForm.length === 0 ? 'flex items-center justify-center' : ''}`}>
-              {responsesPerForm.length > 0 ? (
-                 <div className="overflow-x-auto">
-                   <Table>
-                     <TableHeader>
-                       <TableRow className="bg-muted/50 hover:bg-muted/50">
-                         <TableHead className="w-[25%] sm:w-[30%]">Form Name</TableHead>
-                         <TableHead>Created At</TableHead>
-                         <TableHead className="text-right">Responses</TableHead>
-                         <TableHead className="text-right">Avg. Time</TableHead> {/* Added Header */}
-                         <TableHead className="text-right">Actions</TableHead>
-                       </TableRow>
-                     </TableHeader>
-                     <TableBody>
-                       {responsesPerForm.map((form) => (
-                         <TableRow key={form.formId} className="hover:bg-muted/30 transition-colors">
-                           <TableCell className="font-medium truncate max-w-[100px] sm:max-w-xs">
-                              <Link href={`/${form.formId}`} target="_blank" rel="noopener noreferrer" className="hover:underline text-foreground/90" title={form.formId}>
-                                 {formTitles.get(form.formId) || "Untitled Form"}
+          <CardContent className={`p-0 flex-grow ${responsesPerForm.length === 0 ? 'flex items-center justify-center' : ''}`}>
+            {responsesPerForm.length > 0 ? (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/50 hover:bg-muted/50">
+                      <TableHead className="w-[30%]">Form Title</TableHead>
+                      <TableHead>Created</TableHead>
+                      <TableHead className="text-center">Responses</TableHead>
+                      <TableHead className="text-center">Avg. Time</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {responsesPerForm.map((form) => (
+                      <TableRow
+                        key={form.formId}
+                        className="hover:bg-muted/30 transition-colors group"
+                      >
+                        <TableCell className="font-medium">
+                          <div className="flex flex-col">
+                            <Link
+                              href={`/${form.formId}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="hover:underline text-foreground/90 group-hover:text-primary transition-colors"
+                            >
+                              {formTitles.get(form.formId) || "Untitled Form"}
+                            </Link>
+
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-col">
+                            <span className="text-sm">
+                              {form.createdAt ? format(form.createdAt, 'MMM d, yyyy') : 'Unknown'}
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              {form.createdAt ? format(form.createdAt, 'HH:mm') : ''}
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center justify-center">
+                            <div className="flex flex-col items-center">
+                              <span className="text-lg font-semibold text-primary">
+                                {form.responseCount}
+                              </span>
+                              <span className="text-xs text-muted-foreground">
+                                {form.responseCount === 1 ? 'Response' : 'Responses'}
+                              </span>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center justify-center">
+                            <div className="flex flex-col items-center">
+                              <span className="text-sm font-medium">
+                                {form.averageDurationSeconds !== null
+                                  ? formatDuration(form.averageDurationSeconds)
+                                  : 'N/A'}
+                              </span>
+                              <span className="text-xs text-muted-foreground">
+                                per submission
+                              </span>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex justify-end gap-1">
+                            <Button
+                              disabled={form.responseCount === 0}
+                              variant="ghost"
+                              size="icon"
+                              asChild
+                              className="h-8 w-8 text-primary hover:bg-primary/10"
+                              title="View Live Form"
+                            >
+                              <Link href={`/${form.formId}`} target="_blank" rel="noopener noreferrer">
+                                <Eye className="h-4 w-4" />
                               </Link>
-                           </TableCell>
-                           <TableCell className="text-muted-foreground text-xs whitespace-nowrap">
-                               {form.createdAt ? format(form.createdAt, 'MMM d, yyyy HH:mm') : 'Date unknown'}
-                           </TableCell>
-                           <TableCell className="text-right font-semibold">{form.responseCount}</TableCell>
-                           <TableCell className="text-right text-muted-foreground text-xs whitespace-nowrap">
-                               {form.averageDurationSeconds !== null ? formatDuration(form.averageDurationSeconds) : 'N/A'}
-                            </TableCell>
-                           <TableCell className="text-right">
-                              {/* Action Buttons */}
-                              <div className="flex justify-end gap-1">
-                                 <Button disabled={form.responseCount == 0} variant="ghost" size="icon" asChild className="h-7 w-7 text-primary hover:bg-primary/10" title="View Live Form">
-                                    <Link href={`/${form.formId}`} target="_blank" rel="noopener noreferrer">
-                                       <Eye className="h-4 w-4" />
-                                    </Link>
-                                 </Button>
-                                  <Button variant="ghost" size="icon" asChild className="h-7 w-7 text-accent hover:bg-accent/10" title="Edit Form">
-                                      <Link href={`/edit/${form.formId}`}>
-                                         <Edit className="h-4 w-4" />
-                                      </Link>
-                                  </Button>
-                                  <Button variant="ghost" size="icon" asChild className="h-7 w-7 text-accent hover:bg-accent/10" title="Edit Form">
-                                      <Link href={`/analysis/${form.formId}`}>
-                                         <LayoutDashboard className="h-4 w-4" />
-                                      </Link>
-                                  </Button>
-                                  {/* Add Delete button later if needed */}
-                              </div>
-                           </TableCell>
-                         </TableRow>
-                       ))}
-                     </TableBody>
-                   </Table>
-                 </div>
-              ) : (
-                  <div className="text-center p-10">
-                     <FileText size={48} className="mx-auto text-muted-foreground mb-4" />
-                     <p className="text-muted-foreground">
-                       No forms have been created yet.
-                     </p>
-                      <Button size="sm" className="mt-4" asChild>
-                         <Link href="/">Generate your first form</Link>
-                      </Button>
-                  </div>
-              )}
-           </CardContent>
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              asChild
+                              className="h-8 w-8 text-accent hover:bg-accent/10"
+                              title="Edit Form"
+                            >
+                              <Link href={`/edit/${form.formId}`}>
+                                <Edit className="h-4 w-4" />
+                              </Link>
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              asChild
+                              className="h-8 w-8 text-accent hover:bg-accent/10"
+                              title="View Analysis"
+                            >
+                              <Link href={`/analysis/${form.formId}`}>
+                                <LayoutDashboard className="h-4 w-4" />
+                              </Link>
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            ) : (
+              <div className="text-center p-10">
+                <FileText size={48} className="mx-auto text-muted-foreground mb-4" />
+                <p className="text-muted-foreground">
+                  No forms have been created yet.
+                </p>
+                <Button size="sm" className="mt-4" asChild>
+                  <Link href="/">Generate your first form</Link>
+                </Button>
+              </div>
+            )}
+          </CardContent>
         </Card>
       </section>
 
