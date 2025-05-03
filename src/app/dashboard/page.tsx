@@ -309,14 +309,6 @@ export default function DashboardPage() {
       <div className="container mx-auto p-4 md:p-8 min-h-screen flex flex-col bg-gradient-to-b from-background to-secondary/30">
         <header className="mb-8 flex justify-between items-center">
           <h1 className="text-3xl font-bold">Dashboard</h1>
-          <Button
-            variant="outline"
-            onClick={handleLogout}
-            className="flex items-center gap-2"
-          >
-            <LogOut className="h-4 w-4" />
-            Logout
-          </Button>
         </header>
 
         {/* Key Metrics - Updated to 4 columns */}

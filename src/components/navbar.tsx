@@ -25,7 +25,7 @@ export function Navbar() {
 
   return (
     <nav className="border-b bg-gradient-to-r from-background to-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="flex h-16 items-center px-4 container mx-auto">
+      <div className="flex h-16 items-center px-4 container mx-auto justify-between">
         <div className="flex items-center gap-6">
           <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity group">
             <FormInput className="h-6 w-6 text-primary group-hover:scale-110 transition-transform" />
@@ -54,17 +54,17 @@ export function Navbar() {
                 My Forms
               </Link>
             </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleLogout}
-              className="font-medium hover:bg-primary/10 transition-colors"
-            >
-              <LogOut className="mr-2 h-4 w-4" />
-              Logout
-            </Button>
           </div>
         </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleLogout}
+          className="font-medium text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/50 transition-colors"
+        >
+          <LogOut className="mr-2 h-4 w-4" />
+          Logout
+        </Button>
       </div>
     </nav>
   );
