@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { getDashboardDataAction, DashboardData} from '@/app/actions';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { AlertTriangle, FileText, ListChecks, Users, ArrowLeft, BarChart3, Eye, Edit, Clock,LayoutDashboard } from 'lucide-react'; // Added Eye, Edit, Clock
+import { AlertTriangle, FileText, ListChecks, Users, ArrowLeft, BarChart3, Eye, Edit, Clock,LayoutDashboard, LogOut } from 'lucide-react'; // Added Eye, Edit, Clock, LogOut
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartConfig } from "@/components/ui/chart"
@@ -15,6 +15,9 @@ import { formatDuration } from '@/lib/utils'; // Import the new utility function
 import { Footer } from '@/components/footer';
 import { db } from "@/lib/firebase";
 import { collection, getDocs, query, orderBy, Timestamp } from "firebase/firestore";
+import ProtectedRoute from '@/components/protected-route';
+import { useAuth } from '@/lib/auth';
+import { useRouter } from 'next/navigation';
 
 // Define chart config
 const chartConfig = {
@@ -48,6 +51,9 @@ export default function DashboardPage() {
   const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
   const [submissions, setSubmissions] = useState<FormSubmission[]>([]);
   const [formTitles, setFormTitles] = useState<Map<string, string>>(new Map());
+
+  const { logOut } = useAuth();
+  const router = useRouter();
 
   useEffect(() => {
     async function fetchData() {
@@ -125,6 +131,15 @@ export default function DashboardPage() {
       setSubmissions(submissionsData);
     } catch (error) {
       console.error("Error fetching submissions:", error);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logOut();
+      router.push('/login');
+    } catch (error) {
+      console.error('Error logging out:', error);
     }
   };
 
@@ -290,271 +305,284 @@ export default function DashboardPage() {
    const overallAvgDurationSeconds = totalResponsesWithDuration > 0 ? totalDurationSum / totalResponsesWithDuration : null;
 
   return (
-    <div className="container mx-auto p-4 md:p-8 min-h-screen flex flex-col bg-gradient-to-b from-background to-secondary/30">
+    <ProtectedRoute>
+      <div className="container mx-auto p-4 md:p-8 min-h-screen flex flex-col bg-gradient-to-b from-background to-secondary/30">
+        <header className="mb-8 flex justify-between items-center">
+          <h1 className="text-3xl font-bold">Dashboard</h1>
+          <Button
+            variant="outline"
+            onClick={handleLogout}
+            className="flex items-center gap-2"
+          >
+            <LogOut className="h-4 w-4" />
+            Logout
+          </Button>
+        </header>
 
-      {/* Key Metrics - Updated to 4 columns */}
-       <section className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-10">
-         <Card className="shadow-md hover:shadow-lg transition-shadow duration-300 ease-in-out border border-border/50">
-           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-             <CardTitle className="text-sm font-medium text-muted-foreground">Total Forms Created</CardTitle>
-             <FileText className="h-5 w-5 text-primary" />
-           </CardHeader>
-           <CardContent>
-             <div className="text-3xl font-bold text-foreground">{totalForms}</div>
-             {/* Optional description */}
-           </CardContent>
-         </Card>
-         <Card className="shadow-md hover:shadow-lg transition-shadow duration-300 ease-in-out border border-border/50">
-           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-             <CardTitle className="text-sm font-medium text-muted-foreground">Total Responses Received</CardTitle>
-             <ListChecks className="h-5 w-5 text-primary" />
-           </CardHeader>
-           <CardContent>
-             <div className="text-3xl font-bold text-foreground">{totalResponses}</div>
-             <p className="text-xs text-muted-foreground">
-               Across all forms
-             </p>
-           </CardContent>
-         </Card>
-          <Card className="shadow-md hover:shadow-lg transition-shadow duration-300 ease-in-out border border-border/50">
-           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Avg. Responses / Form</CardTitle>
-              <Users className="h-5 w-5 text-primary" />
-           </CardHeader>
-           <CardContent>
-              <div className="text-3xl font-bold text-foreground">
-                 {totalForms > 0 ? (totalResponses / totalForms).toFixed(1) : 0}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                  Average submissions per form
-              </p>
-           </CardContent>
-          </Card>
-          {/* New Card for Average Submission Time */}
-          <Card className="shadow-md hover:shadow-lg transition-shadow duration-300 ease-in-out border border-border/50">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-               <CardTitle className="text-sm font-medium text-muted-foreground">Avg. Submission Time</CardTitle>
-               <Clock className="h-5 w-5 text-primary" />
-            </CardHeader>
-            <CardContent>
-               <div className="text-3xl font-bold text-foreground">
-                  {overallAvgDurationSeconds !== null ? formatDuration(overallAvgDurationSeconds) : 'N/A'}
-               </div>
-               <p className="text-xs text-muted-foreground">
-                   Average time taken per submission
-               </p>
-            </CardContent>
-           </Card>
-       </section>
-
-       {/* Charts Section */}
-       <section className="grid gap-6 lg:grid-cols-1 mb-10">
-          <Card className="shadow-lg border border-border/50">
-             <CardHeader className="border-b border-border/50">
-                 <CardTitle className="flex items-center gap-2">
-                     <BarChart3 className="h-5 w-5 text-primary" />
-                     Form Submissions Overview
-                 </CardTitle>
-                 <CardDescription>
-                     Number of responses for the top {chartData.length} most active forms.
-                 </CardDescription>
+        {/* Key Metrics - Updated to 4 columns */}
+         <section className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-10">
+           <Card className="shadow-md hover:shadow-lg transition-shadow duration-300 ease-in-out border border-border/50">
+             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+               <CardTitle className="text-sm font-medium text-muted-foreground">Total Forms Created</CardTitle>
+               <FileText className="h-5 w-5 text-primary" />
              </CardHeader>
-             <CardContent className="pt-6 pl-2 pr-6">
-                 {chartData.length > 0 ? (
-                     <ChartContainer config={chartConfig} className="h-[300px] w-full">
-                       <ResponsiveContainer width="100%" height="100%">
-                         <BarChart accessibilityLayer data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}> {/* Adjusted margins */}
-                             <CartesianGrid vertical={false} strokeDasharray="3 3" />
-                              <XAxis
-                                dataKey="formIdShort"
-                                tickLine={false}
-                                tickMargin={10}
-                                axisLine={false}
-                                tickFormatter={(value) => value} // Display short ID directly
-                               />
-                              <YAxis
-                                   tickLine={false}
-                                   axisLine={false}
-                                   tickMargin={10}
-                                   allowDecimals={false} // Ensure whole numbers for counts
-                               />
-                              <ChartTooltip
-                                cursor={false}
-                                content={
-                                   <ChartTooltipContent
-                                        indicator="dot"
-                                        labelKey="fullFormId" // Show full ID in tooltip label
-                                        formatter={(value, name, props) => ( // Custom formatter for tooltip
-                                            <div className="flex flex-col gap-0.5 p-1">
-                                                 <span className="font-semibold">{props.payload.fullFormId}</span>
-                                                 <span className="text-muted-foreground text-xs">
-                                                    Created: {props.payload.createdAt || 'N/A'}
-                                                 </span>
-                                                  {name === 'responses' && (
-                                                    <span className="font-bold text-primary">{value} Responses</span>
-                                                  )}
-                                                   {/* Display Avg Time in Tooltip */}
-                                                  {props.payload.avgDurationSeconds !== null && (
-                                                      <span className="text-xs text-muted-foreground">
-                                                          Avg. Time: {formatDuration(props.payload.avgDurationSeconds)}
-                                                      </span>
-                                                  )}
-                                            </div>
-                                        )}
-                                    />
-                                }
-                              />
-                             <Bar dataKey="responses" fill="var(--color-responses)" radius={4} />
-                             {/* Optional Legend: <ChartLegend content={<ChartLegendContent />} /> */}
-                         </BarChart>
-                         </ResponsiveContainer>
-                     </ChartContainer>
-                  ) : (
-                      <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-                         No submission data available for charting.
-                      </div>
-                  )}
+             <CardContent>
+               <div className="text-3xl font-bold text-foreground">{totalForms}</div>
+               {/* Optional description */}
              </CardContent>
-          </Card>
-       </section>
-
-
-      {/* Responses per Form Table */}
-      <section className="flex-grow">
-        <Card className="shadow-lg border border-border/50 h-full flex flex-col">
-          <CardHeader className="border-b border-border/50">
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5 text-primary" />
-              Form Submissions
-            </CardTitle>
-          </CardHeader>
-          <CardContent className={`p-0 flex-grow ${responsesPerForm.length === 0 ? 'flex items-center justify-center' : ''}`}>
-            {responsesPerForm.length > 0 ? (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-muted/50 hover:bg-muted/50">
-                      <TableHead className="w-[30%]">Form Title</TableHead>
-                      <TableHead>Created</TableHead>
-                      <TableHead className="text-center">Responses</TableHead>
-                      <TableHead className="text-center">Avg. Time</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {responsesPerForm.map((form) => (
-                      <TableRow
-                        key={form.formId}
-                        className="hover:bg-muted/30 transition-colors group"
-                      >
-                        <TableCell className="font-medium">
-                          <div className="flex flex-col">
-                            <Link
-                              href={`/${form.formId}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="hover:underline text-foreground/90 group-hover:text-primary transition-colors"
-                            >
-                              {formTitles.get(form.formId) || "Untitled Form"}
-                            </Link>
-
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex flex-col">
-                            <span className="text-sm">
-                              {form.createdAt ? format(form.createdAt, 'MMM d, yyyy') : 'Unknown'}
-                            </span>
-                            <span className="text-xs text-muted-foreground">
-                              {form.createdAt ? format(form.createdAt, 'HH:mm') : ''}
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center justify-center">
-                            <div className="flex flex-col items-center">
-                              <span className="text-lg font-semibold text-primary">
-                                {form.responseCount}
-                              </span>
-                              <span className="text-xs text-muted-foreground">
-                                {form.responseCount === 1 ? 'Response' : 'Responses'}
-                              </span>
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center justify-center">
-                            <div className="flex flex-col items-center">
-                              <span className="text-sm font-medium">
-                                {form.averageDurationSeconds !== null
-                                  ? formatDuration(form.averageDurationSeconds)
-                                  : 'N/A'}
-                              </span>
-                              <span className="text-xs text-muted-foreground">
-                                per submission
-                              </span>
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex justify-end gap-1">
-                            <Button
-                              disabled={form.responseCount === 0}
-                              variant="ghost"
-                              size="icon"
-                              asChild
-                              className="h-8 w-8 text-primary hover:bg-primary/10"
-                              title="View Live Form"
-                            >
-                              <Link href={`/${form.formId}`} target="_blank" rel="noopener noreferrer">
-                                <Eye className="h-4 w-4" />
-                              </Link>
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              asChild
-                              className="h-8 w-8 text-accent hover:bg-accent/10"
-                              title="Edit Form"
-                            >
-                              <Link href={`/edit/${form.formId}`}>
-                                <Edit className="h-4 w-4" />
-                              </Link>
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              asChild
-                              className="h-8 w-8 text-accent hover:bg-accent/10"
-                              title="View Analysis"
-                            >
-                              <Link href={`/analysis/${form.formId}`}>
-                                <LayoutDashboard className="h-4 w-4" />
-                              </Link>
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            ) : (
-              <div className="text-center p-10">
-                <FileText size={48} className="mx-auto text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">
-                  No forms have been created yet.
+           </Card>
+           <Card className="shadow-md hover:shadow-lg transition-shadow duration-300 ease-in-out border border-border/50">
+             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+               <CardTitle className="text-sm font-medium text-muted-foreground">Total Responses Received</CardTitle>
+               <ListChecks className="h-5 w-5 text-primary" />
+             </CardHeader>
+             <CardContent>
+               <div className="text-3xl font-bold text-foreground">{totalResponses}</div>
+               <p className="text-xs text-muted-foreground">
+                 Across all forms
+               </p>
+             </CardContent>
+           </Card>
+            <Card className="shadow-md hover:shadow-lg transition-shadow duration-300 ease-in-out border border-border/50">
+             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">Avg. Responses / Form</CardTitle>
+                <Users className="h-5 w-5 text-primary" />
+             </CardHeader>
+             <CardContent>
+                <div className="text-3xl font-bold text-foreground">
+                   {totalForms > 0 ? (totalResponses / totalForms).toFixed(1) : 0}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                    Average submissions per form
                 </p>
-                <Button size="sm" className="mt-4" asChild>
-                  <Link href="/">Generate your first form</Link>
-                </Button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </section>
+             </CardContent>
+            </Card>
+            {/* New Card for Average Submission Time */}
+            <Card className="shadow-md hover:shadow-lg transition-shadow duration-300 ease-in-out border border-border/50">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                 <CardTitle className="text-sm font-medium text-muted-foreground">Avg. Submission Time</CardTitle>
+                 <Clock className="h-5 w-5 text-primary" />
+              </CardHeader>
+              <CardContent>
+                 <div className="text-3xl font-bold text-foreground">
+                    {overallAvgDurationSeconds !== null ? formatDuration(overallAvgDurationSeconds) : 'N/A'}
+                 </div>
+                 <p className="text-xs text-muted-foreground">
+                     Average time taken per submission
+                 </p>
+              </CardContent>
+             </Card>
+         </section>
 
-     <Footer />
-    </div>
+         {/* Charts Section */}
+         <section className="grid gap-6 lg:grid-cols-1 mb-10">
+            <Card className="shadow-lg border border-border/50">
+               <CardHeader className="border-b border-border/50">
+                   <CardTitle className="flex items-center gap-2">
+                       <BarChart3 className="h-5 w-5 text-primary" />
+                       Form Submissions Overview
+                   </CardTitle>
+                   <CardDescription>
+                       Number of responses for the top {chartData.length} most active forms.
+                   </CardDescription>
+               </CardHeader>
+               <CardContent className="pt-6 pl-2 pr-6">
+                   {chartData.length > 0 ? (
+                       <ChartContainer config={chartConfig} className="h-[300px] w-full">
+                         <ResponsiveContainer width="100%" height="100%">
+                           <BarChart accessibilityLayer data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}> {/* Adjusted margins */}
+                               <CartesianGrid vertical={false} strokeDasharray="3 3" />
+                                <XAxis
+                                  dataKey="formIdShort"
+                                  tickLine={false}
+                                  tickMargin={10}
+                                  axisLine={false}
+                                  tickFormatter={(value) => value} // Display short ID directly
+                                 />
+                                <YAxis
+                                     tickLine={false}
+                                     axisLine={false}
+                                     tickMargin={10}
+                                     allowDecimals={false} // Ensure whole numbers for counts
+                                 />
+                                <ChartTooltip
+                                  cursor={false}
+                                  content={
+                                     <ChartTooltipContent
+                                          indicator="dot"
+                                          labelKey="fullFormId" // Show full ID in tooltip label
+                                          formatter={(value, name, props) => ( // Custom formatter for tooltip
+                                              <div className="flex flex-col gap-0.5 p-1">
+                                                   <span className="font-semibold">{props.payload.fullFormId}</span>
+                                                   <span className="text-muted-foreground text-xs">
+                                                      Created: {props.payload.createdAt || 'N/A'}
+                                                   </span>
+                                                    {name === 'responses' && (
+                                                      <span className="font-bold text-primary">{value} Responses</span>
+                                                    )}
+                                                     {/* Display Avg Time in Tooltip */}
+                                                    {props.payload.avgDurationSeconds !== null && (
+                                                        <span className="text-xs text-muted-foreground">
+                                                            Avg. Time: {formatDuration(props.payload.avgDurationSeconds)}
+                                                        </span>
+                                                    )}
+                                              </div>
+                                          )}
+                                      />
+                                  }
+                                />
+                               <Bar dataKey="responses" fill="var(--color-responses)" radius={4} />
+                               {/* Optional Legend: <ChartLegend content={<ChartLegendContent />} /> */}
+                           </BarChart>
+                           </ResponsiveContainer>
+                       </ChartContainer>
+                    ) : (
+                        <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                           No submission data available for charting.
+                        </div>
+                    )}
+               </CardContent>
+            </Card>
+         </section>
+
+
+        {/* Responses per Form Table */}
+        <section className="flex-grow">
+          <Card className="shadow-lg border border-border/50 h-full flex flex-col">
+            <CardHeader className="border-b border-border/50">
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5 text-primary" />
+                Form Submissions
+              </CardTitle>
+            </CardHeader>
+            <CardContent className={`p-0 flex-grow ${responsesPerForm.length === 0 ? 'flex items-center justify-center' : ''}`}>
+              {responsesPerForm.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-muted/50 hover:bg-muted/50">
+                        <TableHead className="w-[30%]">Form Title</TableHead>
+                        <TableHead>Created</TableHead>
+                        <TableHead className="text-center">Responses</TableHead>
+                        <TableHead className="text-center">Avg. Time</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {responsesPerForm.map((form) => (
+                        <TableRow
+                          key={form.formId}
+                          className="hover:bg-muted/30 transition-colors group"
+                        >
+                          <TableCell className="font-medium">
+                            <div className="flex flex-col">
+                              <Link
+                                href={`/${form.formId}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="hover:underline text-foreground/90 group-hover:text-primary transition-colors"
+                              >
+                                {formTitles.get(form.formId) || "Untitled Form"}
+                              </Link>
+
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex flex-col">
+                              <span className="text-sm">
+                                {form.createdAt ? format(form.createdAt, 'MMM d, yyyy') : 'Unknown'}
+                              </span>
+                              <span className="text-xs text-muted-foreground">
+                                {form.createdAt ? format(form.createdAt, 'HH:mm') : ''}
+                              </span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center justify-center">
+                              <div className="flex flex-col items-center">
+                                <span className="text-lg font-semibold text-primary">
+                                  {form.responseCount}
+                                </span>
+                                <span className="text-xs text-muted-foreground">
+                                  {form.responseCount === 1 ? 'Response' : 'Responses'}
+                                </span>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center justify-center">
+                              <div className="flex flex-col items-center">
+                                <span className="text-sm font-medium">
+                                  {form.averageDurationSeconds !== null
+                                    ? formatDuration(form.averageDurationSeconds)
+                                    : 'N/A'}
+                                </span>
+                                <span className="text-xs text-muted-foreground">
+                                  per submission
+                                </span>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex justify-end gap-1">
+                              <Button
+                                disabled={form.responseCount === 0}
+                                variant="ghost"
+                                size="icon"
+                                asChild
+                                className="h-8 w-8 text-primary hover:bg-primary/10"
+                                title="View Live Form"
+                              >
+                                <Link href={`/${form.formId}`} target="_blank" rel="noopener noreferrer">
+                                  <Eye className="h-4 w-4" />
+                                </Link>
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                asChild
+                                className="h-8 w-8 text-accent hover:bg-accent/10"
+                                title="Edit Form"
+                              >
+                                <Link href={`/edit/${form.formId}`}>
+                                  <Edit className="h-4 w-4" />
+                                </Link>
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                asChild
+                                className="h-8 w-8 text-accent hover:bg-accent/10"
+                                title="View Analysis"
+                              >
+                                <Link href={`/analysis/${form.formId}`}>
+                                  <LayoutDashboard className="h-4 w-4" />
+                                </Link>
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              ) : (
+                <div className="text-center p-10">
+                  <FileText size={48} className="mx-auto text-muted-foreground mb-4" />
+                  <p className="text-muted-foreground">
+                    No forms have been created yet.
+                  </p>
+                  <Button size="sm" className="mt-4" asChild>
+                    <Link href="/">Generate your first form</Link>
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </section>
+
+       <Footer />
+      </div>
+    </ProtectedRoute>
   );
 }

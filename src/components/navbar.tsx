@@ -2,11 +2,26 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, FileText, FormInput } from "lucide-react";
+import { useAuth } from "@/lib/auth";
+import { LayoutDashboard, FileText, FormInput, LogOut } from "lucide-react";
 
 export function Navbar() {
   const pathname = usePathname();
+  const { user, logOut } = useAuth();
+
+  const handleLogout = async () => {
+    try {
+      await logOut();
+    } catch (error) {
+      console.error('Error logging out:', error);
+    }
+  };
+
+  if (!user) {
+    return null;
+  }
 
   return (
     <nav className="border-b bg-gradient-to-r from-background to-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -38,6 +53,15 @@ export function Navbar() {
                 <FileText className="mr-2 h-4 w-4" />
                 My Forms
               </Link>
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleLogout}
+              className="font-medium hover:bg-primary/10 transition-colors"
+            >
+              <LogOut className="mr-2 h-4 w-4" />
+              Logout
             </Button>
           </div>
         </div>
