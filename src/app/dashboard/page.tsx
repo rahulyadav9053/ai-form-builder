@@ -2,10 +2,9 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
-import { getDashboardDataAction, DashboardData} from '@/app/actions';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { AlertTriangle, FileText, ListChecks, Users, ArrowLeft, BarChart3, Eye, Edit, Clock,LayoutDashboard, LogOut } from 'lucide-react'; // Added Eye, Edit, Clock, LogOut
+import { AlertTriangle, FileText, ListChecks, Users, ArrowLeft, BarChart3, Eye, Edit, Clock, LayoutDashboard } from 'lucide-react';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartConfig } from "@/components/ui/chart"
@@ -13,11 +12,7 @@ import { Bar, BarChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer } from 
 import { Skeleton } from "@/components/ui/skeleton"; // Import Skeleton
 import { formatDuration } from '@/lib/utils'; // Import the new utility function
 import { Footer } from '@/components/footer';
-import { db } from "@/lib/firebase";
-import { collection, getDocs, query, orderBy, Timestamp } from "firebase/firestore";
 import ProtectedRoute from '@/components/protected-route';
-import { useAuth } from '@/lib/auth';
-import { useRouter } from 'next/navigation';
 
 // Define chart config
 const chartConfig = {
@@ -27,27 +22,11 @@ const chartConfig = {
   },
 } satisfies ChartConfig;
 
-// Define the structure for chart data points
-interface ChartDataPoint {
-  formIdShort: string; // Use shortened ID for display
-  fullFormId: string; // Keep full ID for linking
-  responses: number;
-  createdAt: string | null; // Store formatted date string
-  avgDurationSeconds: number | null; // Add average duration
-}
-
-interface FormSubmission {
-  id: string;
-  formId: string;
-  formTitle: string;
-  submittedAt: Date;
-  data: Record<string, any>;
-}
-
 interface ResponsePerForm {
   formId: string;
+  title: string;
+  createdAt: string | null;
   responseCount: number;
-  createdAt: Date | null;
   averageDurationSeconds: number | null;
 }
 
@@ -55,10 +34,7 @@ interface DashboardStats {
   totalForms: number;
   totalResponses: number;
   responsesPerForm: ResponsePerForm[];
-}
-
-interface FormTitleMap {
-  [formId: string]: string;
+  overallAvgDurationSeconds: number | null;
 }
 
 export default function DashboardPage() {
@@ -66,62 +42,19 @@ export default function DashboardPage() {
     totalForms: 0,
     totalResponses: 0,
     responsesPerForm: [],
+    overallAvgDurationSeconds: null,
   });
-  const [formTitles, setFormTitles] = useState<FormTitleMap>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  const { logOut } = useAuth();
-  const router = useRouter();
 
   useEffect(() => {
     async function fetchDashboardData() {
       setLoading(true);
       try {
-        // Fetch all forms
-        const formsRef = collection(db, "formConfigs");
-        const formsSnapshot = await getDocs(formsRef);
-        const titles: FormTitleMap = {};
-        const formCreatedAt: { [formId: string]: Date | null } = {};
-        formsSnapshot.forEach(doc => {
-          const data = doc.data();
-          titles[doc.id] = data.config?.title || "Untitled Form";
-          formCreatedAt[doc.id] = data.createdAt?.toDate ? data.createdAt.toDate() : null;
-        });
-
-        // Fetch all submissions
-        const submissionsRef = collection(db, "formSubmissions");
-        const submissionsSnapshot = await getDocs(submissionsRef);
-
-        // Aggregate responses per form
-        const responseMap: { [formId: string]: { count: number; totalDuration: number; durationCount: number } } = {};
-        submissionsSnapshot.forEach(doc => {
-          const data = doc.data();
-          const formId = data.formId;
-          if (!formId) return;
-          if (!responseMap[formId]) {
-            responseMap[formId] = { count: 0, totalDuration: 0, durationCount: 0 };
-          }
-          responseMap[formId].count += 1;
-          if (typeof data.durationMs === 'number') {
-            responseMap[formId].totalDuration += data.durationMs / 1000;
-            responseMap[formId].durationCount += 1;
-          }
-        });
-
-        const responsesPerForm: ResponsePerForm[] = Object.entries(responseMap).map(([formId, agg]) => ({
-          formId,
-          responseCount: agg.count,
-          createdAt: formCreatedAt[formId] || null,
-          averageDurationSeconds: agg.durationCount > 0 ? agg.totalDuration / agg.durationCount : null,
-        }));
-
-        setStats({
-          totalForms: formsSnapshot.size,
-          totalResponses: submissionsSnapshot.size,
-          responsesPerForm,
-        });
-        setFormTitles(titles);
+        const res = await fetch('http://localhost:4001/api/dashboard');
+        if (!res.ok) throw new Error('Failed to fetch dashboard data');
+        const data = await res.json();
+        setStats(data);
         setError(null);
       } catch (err: any) {
         setError(err.message || 'Unknown error');
@@ -141,28 +74,12 @@ export default function DashboardPage() {
         formIdShort: form.formId.slice(0, 6) + '...',
         fullFormId: form.formId,
         responses: form.responseCount,
-        createdAt: form.createdAt ? format(form.createdAt, 'MMM d, yyyy') : 'Unknown',
+        createdAt: form.createdAt ? format(new Date(form.createdAt), 'MMM d, yyyy') : 'Unknown',
         avgDurationSeconds: form.averageDurationSeconds,
       }));
   }, [stats.responsesPerForm]);
 
-  // Calculate overall average submission time
-  const totalDurationSum = stats.responsesPerForm.reduce((sum, form) => {
-    return sum + (form.averageDurationSeconds !== null && form.responseCount > 0 ? form.averageDurationSeconds * form.responseCount : 0);
-  }, 0);
-  const totalResponsesWithDuration = stats.responsesPerForm.reduce((sum, form) => {
-    return sum + (form.averageDurationSeconds !== null ? form.responseCount : 0);
-  }, 0);
-  const overallAvgDurationSeconds = totalResponsesWithDuration > 0 ? totalDurationSum / totalResponsesWithDuration : null;
-
-  const handleLogout = async () => {
-    try {
-      await logOut();
-      router.push('/login');
-    } catch (error) {
-      console.error('Error logging out:', error);
-    }
-  };
+  const overallAvgDurationSeconds = stats.overallAvgDurationSeconds;
 
   if (loading) {
     return (
@@ -452,7 +369,7 @@ export default function DashboardPage() {
             <CardHeader className="border-b border-border/50">
               <CardTitle className="flex items-center gap-2">
                 <FileText className="h-5 w-5 text-primary" />
-                Form Submissions
+                Form Details & Submissions
               </CardTitle>
             </CardHeader>
             <CardContent className={`p-0 flex-grow ${stats.responsesPerForm.length === 0 ? 'flex items-center justify-center' : ''}`}>
@@ -482,7 +399,7 @@ export default function DashboardPage() {
                                 rel="noopener noreferrer"
                                 className="hover:underline text-foreground/90 group-hover:text-primary transition-colors"
                               >
-                                {formTitles[form.formId] || "Untitled Form"}
+                                {form.title}
                               </Link>
 
                             </div>
@@ -490,10 +407,7 @@ export default function DashboardPage() {
                           <TableCell>
                             <div className="flex flex-col">
                               <span className="text-sm">
-                                {form.createdAt ? format(form.createdAt, 'MMM d, yyyy') : 'Unknown'}
-                              </span>
-                              <span className="text-xs text-muted-foreground">
-                                {form.createdAt ? format(form.createdAt, 'HH:mm') : ''}
+                                {form.createdAt ? format(new Date(form.createdAt), 'MMM d, yyyy') : 'Unknown'}
                               </span>
                             </div>
                           </TableCell>
@@ -502,9 +416,6 @@ export default function DashboardPage() {
                               <div className="flex flex-col items-center">
                                 <span className="text-lg font-semibold text-primary">
                                   {form.responseCount}
-                                </span>
-                                <span className="text-xs text-muted-foreground">
-                                  {form.responseCount === 1 ? 'Response' : 'Responses'}
                                 </span>
                               </div>
                             </div>
@@ -516,9 +427,6 @@ export default function DashboardPage() {
                                   {form.averageDurationSeconds !== null
                                     ? formatDuration(form.averageDurationSeconds)
                                     : 'N/A'}
-                                </span>
-                                <span className="text-xs text-muted-foreground">
-                                  per submission
                                 </span>
                               </div>
                             </div>
