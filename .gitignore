@@ -1,6 +1,13 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
+BACKEND/node_modules
+FRONTEND/node_modules
+FRONTEND/.next
+FRONTEND/.next/*
+SEEDER/node_modules
+
+/node_modules
 /node_modules
 /.pnp
 .pnp.*
