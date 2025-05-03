@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, Plus, Settings, FileText, FormInput } from "lucide-react";
+import { LayoutDashboard, FileText, FormInput } from "lucide-react";
 
 export function Navbar() {
   const pathname = usePathname();
@@ -29,17 +29,6 @@ export function Navbar() {
               </Link>
             </Button>
             <Button
-              variant={pathname === "/create" ? "default" : "ghost"}
-              size="sm"
-              asChild
-              className="font-medium hover:bg-primary/10 transition-colors"
-            >
-              <Link href="/create">
-                <Plus className="mr-2 h-4 w-4" />
-                New Form
-              </Link>
-            </Button>
-            <Button
               variant={pathname === "/forms" ? "default" : "ghost"}
               size="sm"
               asChild
@@ -51,19 +40,6 @@ export function Navbar() {
               </Link>
             </Button>
           </div>
-        </div>
-        <div className="ml-auto flex items-center gap-2">
-          <Button
-            variant={pathname === "/settings" ? "default" : "ghost"}
-            size="sm"
-            asChild
-            className="font-medium hover:bg-primary/10 transition-colors"
-          >
-            <Link href="/settings">
-              <Settings className="mr-2 h-4 w-4" />
-              Settings
-            </Link>
-          </Button>
         </div>
       </div>
     </nav>

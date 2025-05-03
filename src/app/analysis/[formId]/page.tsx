@@ -100,7 +100,7 @@ export default function Page() {
           <div className="animate-fade-in">
             <div className="mb-6 flex justify-between items-center">
               <h2 className="text-2xl font-bold text-gray-800 dark:text-white">
-                Analysis Results
+                Data Analysis Results
               </h2>
               <div className="flex gap-3">
                 <button
@@ -163,7 +163,6 @@ export default function Page() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-white">
-      <Header />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {renderContent()}
       </main>

@@ -1,4 +1,3 @@
-
 "use client" // Add this directive because we are using hooks (useState, useEffect) for client-side rendering of charts
 
 import React, { useState, useEffect } from 'react';
@@ -14,6 +13,8 @@ import { Bar, BarChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer } from 
 import { Skeleton } from "@/components/ui/skeleton"; // Import Skeleton
 import { formatDuration } from '@/lib/utils'; // Import the new utility function
 import { Footer } from '@/components/footer';
+import { db } from "@/lib/firebase";
+import { collection, getDocs, query, orderBy, Timestamp } from "firebase/firestore";
 
 // Define chart config
 const chartConfig = {
@@ -32,40 +33,100 @@ interface ChartDataPoint {
   avgDurationSeconds: number | null; // Add average duration
 }
 
+interface FormSubmission {
+  id: string;
+  formId: string;
+  formTitle: string;
+  submittedAt: Date;
+  data: Record<string, any>;
+}
+
 export default function DashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
+  const [submissions, setSubmissions] = useState<FormSubmission[]>([]);
+  const [formTitles, setFormTitles] = useState<Map<string, string>>(new Map());
 
   useEffect(() => {
     async function fetchData() {
       setIsLoading(true);
-      const result = await getDashboardDataAction();
-      if ('error' in result) {
-        setError(result.error);
-        setData(null);
-      } else {
-        setData(result);
-        setError(null);
+      try {
+        // First, get all form configurations to map IDs to titles
+        const formsRef = collection(db, "formConfigs");
+        const formsSnapshot = await getDocs(formsRef);
+        const titles = new Map();
+        formsSnapshot.forEach(doc => {
+          titles.set(doc.id, doc.data().config.title || "Untitled Form");
+        });
+        setFormTitles(titles);
 
-        // Prepare data for the chart (e.g., top 10 forms by responses)
-        const sortedForms = [...result.responsesPerForm].sort((a, b) => b.responseCount - a.responseCount);
-        const topForms = sortedForms.slice(0, 10); // Limit to top 10 forms for chart clarity
+        const result = await getDashboardDataAction();
+        if ('error' in result) {
+          setError(result.error);
+          setData(null);
+        } else {
+          setData(result);
+          setError(null);
 
-        setChartData(topForms.map(form => ({
-          formIdShort: form.formId.substring(0, 6) + '...', // Shorten ID for chart label
-          fullFormId: form.formId, // Keep full ID
-          responses: form.responseCount,
-          createdAt: form.createdAt ? format(form.createdAt, 'MMM d, yyyy') : 'Unknown Date',
-          avgDurationSeconds: form.averageDurationSeconds, // Include avg duration
-        })));
+          // Prepare data for the chart (e.g., top 10 forms by responses)
+          const sortedForms = [...result.responsesPerForm].sort((a, b) => b.responseCount - a.responseCount);
+          const topForms = sortedForms.slice(0, 10); // Limit to top 10 forms for chart clarity
+
+          setChartData(topForms.map(form => ({
+            formIdShort: titles.get(form.formId) || form.formId.substring(0, 6) + '...', // Use title if available
+            fullFormId: form.formId,
+            responses: form.responseCount,
+            createdAt: form.createdAt ? format(form.createdAt, 'MMM d, yyyy') : 'Unknown Date',
+            avgDurationSeconds: form.averageDurationSeconds,
+          })));
+        }
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        setError("Failed to load dashboard data");
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
     }
     fetchData();
   }, []);
 
+  useEffect(() => {
+    fetchSubmissions();
+  }, []);
+
+  const fetchSubmissions = async () => {
+    try {
+      // First, get all form configurations to map IDs to titles
+      const formsRef = collection(db, "formConfigs");
+      const formsSnapshot = await getDocs(formsRef);
+      const formTitles = new Map();
+      formsSnapshot.forEach(doc => {
+        formTitles.set(doc.id, doc.data().config.title || "Untitled Form");
+      });
+
+      // Then get all submissions
+      const submissionsRef = collection(db, "formSubmissions");
+      const q = query(submissionsRef, orderBy("submittedAt", "desc"));
+      const querySnapshot = await getDocs(q);
+
+      const submissionsData = querySnapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          formId: data.formId,
+          formTitle: formTitles.get(data.formId) || "Unknown Form",
+          submittedAt: data.submittedAt?.toDate() || new Date(),
+          data: data.data || {},
+        };
+      });
+
+      setSubmissions(submissionsData);
+    } catch (error) {
+      console.error("Error fetching submissions:", error);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -373,7 +434,7 @@ export default function DashboardPage() {
                    <Table>
                      <TableHeader>
                        <TableRow className="bg-muted/50 hover:bg-muted/50">
-                         <TableHead className="w-[25%] sm:w-[30%]">Form ID</TableHead>
+                         <TableHead className="w-[25%] sm:w-[30%]">Form Name</TableHead>
                          <TableHead>Created At</TableHead>
                          <TableHead className="text-right">Responses</TableHead>
                          <TableHead className="text-right">Avg. Time</TableHead> {/* Added Header */}
@@ -385,7 +446,7 @@ export default function DashboardPage() {
                          <TableRow key={form.formId} className="hover:bg-muted/30 transition-colors">
                            <TableCell className="font-medium truncate max-w-[100px] sm:max-w-xs">
                               <Link href={`/${form.formId}`} target="_blank" rel="noopener noreferrer" className="hover:underline text-foreground/90" title={form.formId}>
-                                 {form.formId.substring(0, 12)}...
+                                 {formTitles.get(form.formId) || "Untitled Form"}
                               </Link>
                            </TableCell>
                            <TableCell className="text-muted-foreground text-xs whitespace-nowrap">
