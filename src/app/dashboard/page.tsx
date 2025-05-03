@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { getDashboardDataAction, DashboardData} from '@/app/actions';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { AlertTriangle, FileText, ListChecks, Users, ArrowLeft, BarChart3, Eye, Edit, Clock } from 'lucide-react'; // Added Eye, Edit, Clock
+import { AlertTriangle, FileText, ListChecks, Users, ArrowLeft, BarChart3, Eye, Edit, Clock,LayoutDashboard } from 'lucide-react'; // Added Eye, Edit, Clock
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartConfig } from "@/components/ui/chart"
@@ -419,6 +419,11 @@ export default function DashboardPage() {
                                   <Button variant="ghost" size="icon" asChild className="h-7 w-7 text-accent hover:bg-accent/10" title="Edit Form">
                                       <Link href={`/edit/${form.formId}`}>
                                          <Edit className="h-4 w-4" />
+                                      </Link>
+                                  </Button>
+                                  <Button variant="ghost" size="icon" asChild className="h-7 w-7 text-accent hover:bg-accent/10" title="Edit Form">
+                                      <Link href={`/analysis/${form.formId}`}>
+                                         <LayoutDashboard className="h-4 w-4" />
                                       </Link>
                                   </Button>
                                   {/* Add Delete button later if needed */}
