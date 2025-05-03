@@ -1,4 +1,3 @@
-
 "use server";
 
 import { generateFormConfig as generateFormConfigFlow, GenerateFormConfigInput } from "@/ai/flows/generate-form-config";
@@ -29,9 +28,11 @@ export async function generateFormConfigAction(input: GenerateFormConfigInput): 
 
     // Save the newly generated config to Firestore
     const docRef = await addDoc(collection(db, "formConfigs"), {
-      config: result.formConfig,
+      config: {
+        title: input.prompt.split(' ').slice(0, 5).join(' '), // Use first 5 words of prompt as title
+        elements: result.formConfig
+      },
       createdAt: serverTimestamp(),
-      // Add a name or title later if needed
     });
     console.log("Generated form config saved with ID: ", docRef.id);
 
@@ -49,7 +50,10 @@ export async function createEmptyFormAction(): Promise<{ docId: string } | { err
     try {
       console.log("Creating empty form config in Firestore");
       const docRef = await addDoc(collection(db, "formConfigs"), {
-        config: [], // Start with an empty config
+        config: {
+          title: 'Untitled Form',
+          elements: []
+        },
         createdAt: serverTimestamp(),
       });
       console.log("Empty form document written with ID: ", docRef.id);
@@ -144,13 +148,13 @@ export async function getFormConfigAction(formId: string): Promise<{ formConfig:
       console.log("Form config found:", data.config);
       // Validate fetched data
        // Allow empty config array []
-       if (!data.config || !Array.isArray(data.config)) {
+       if (!data.config || !data.config.elements || !Array.isArray(data.config.elements)) {
             console.error("Invalid config structure in Firestore document:", data);
             throw new Error("Fetched form configuration has an invalid structure.");
        }
        // Validate individual elements if config is not empty
-       if (data.config.length > 0) {
-           data.config.forEach((element: any, index: number) => {
+       if (data.config.elements.length > 0) {
+           data.config.elements.forEach((element: any, index: number) => {
              if (!element.type || !element.label || !element.name) {
                console.error(`Invalid element at index ${index} in fetched config:`, element);
                throw new Error(`Fetched element at index ${index} is missing required fields (type, label, name).`);

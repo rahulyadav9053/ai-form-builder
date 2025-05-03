@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useTransition, useEffect } from 'react';
@@ -115,32 +114,29 @@ export function FormRenderer({ formConfig, formId }: FormRendererProps) {
   const { toast } = useToast();
   const [isSubmitting, startSubmitTransition] = useTransition();
   const [submissionSuccess, setSubmissionSuccess] = useState(false);
-  const [startTime, setStartTime] = useState<number | null>(null); // State for start time
+  const [startTime, setStartTime] = useState<number | null>(null);
 
   // Record start time on mount (client-side only)
   useEffect(() => {
     setStartTime(Date.now());
   }, []);
 
-
   // Generate the schema based on the config
-  const formSchema = React.useMemo(() => generateSchema(formConfig), [formConfig]);
+  const formSchema = React.useMemo(() => generateSchema(formConfig.elements), [formConfig.elements]);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
-    defaultValues: formConfig.reduce((acc, el) => {
-        if (el.type.toLowerCase() === 'checkbox') {
-            acc[el.name] = false; // Default checkbox to false
-        } else if (el.type.toLowerCase() === 'number') {
-             acc[el.name] = undefined; // Default number to undefined to avoid sending 0 unintentionally
-        }
-        else {
-            acc[el.name] = ''; // Default others to empty string
-        }
-        return acc;
-        }, {} as Record<string, any>),
+    defaultValues: formConfig.elements.reduce((acc, el) => {
+      if (el.type.toLowerCase() === 'checkbox') {
+        acc[el.name] = false;
+      } else if (el.type.toLowerCase() === 'number') {
+        acc[el.name] = undefined;
+      } else {
+        acc[el.name] = '';
+      }
+      return acc;
+    }, {} as Record<string, any>),
   });
-
 
   const onSubmit: SubmitHandler<FormData> = (data) => {
     const endTime = Date.now();
@@ -302,20 +298,15 @@ export function FormRenderer({ formConfig, formId }: FormRendererProps) {
     );
   };
 
-  // Find if there's an explicit submit button config
-  const submitButtonConfig = formConfig.find(el => el.type.toLowerCase() === 'submit');
-
   return (
     <Card className="shadow-lg">
-       {/* No Header needed for the rendered form itself, page provides context */}
-       {/* <CardHeader>
-          <CardTitle>Fill the Form</CardTitle>
-          <CardDescription>Form ID: {formId}</CardDescription>
-       </CardHeader> */}
+      <CardHeader>
+        <CardTitle>{formConfig.title || 'Form'}</CardTitle>
+      </CardHeader>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <CardContent className="p-6 space-y-1 pt-6">
-            {formConfig.filter(el => el.type.toLowerCase() !== 'submit').map(renderFormElement)}
+            {formConfig.elements.filter(el => el.type.toLowerCase() !== 'submit').map(renderFormElement)}
           </CardContent>
           <CardFooter className="flex justify-end p-6 pt-4">
             <Button type="submit" disabled={isSubmitting || startTime === null} className="bg-primary hover:bg-primary/90">
@@ -325,10 +316,10 @@ export function FormRenderer({ formConfig, formId }: FormRendererProps) {
                   Submitting...
                 </>
               ) : (
-                 <>
-                   <Send className="mr-2 h-4 w-4" />
-                   {submitButtonConfig?.label || 'Submit Response'}
-                 </>
+                <>
+                  <Send className="mr-2 h-4 w-4" />
+                  {formConfig.elements.find(el => el.type.toLowerCase() === 'submit')?.label || 'Submit Response'}
+                </>
               )}
             </Button>
           </CardFooter>

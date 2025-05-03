@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useTransition } from 'react';
@@ -94,12 +93,15 @@ export function FormGenerator() {
 
   return (
     <div className="space-y-6 w-full max-w-3xl">
-      <Card className="shadow-md">
+      <Card className="shadow-xl border-0 bg-card/95 backdrop-blur-sm">
         <CardHeader>
           <CardTitle className="text-2xl flex items-center gap-2">
-             <Pencil className="text-primary" /> Describe Your Form
+            <Pencil className="text-primary" />
+            <span className="bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
+              Describe Your Form
+            </span>
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="text-base">
             Enter a description and let AI generate the form, or start building manually below.
           </CardDescription>
         </CardHeader>
@@ -109,16 +111,16 @@ export function FormGenerator() {
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
             rows={4}
-            className="resize-none bg-secondary focus:bg-background transition-colors"
+            className="resize-none bg-secondary/80 focus:bg-background transition-colors border-primary/20 focus:border-primary/50"
             aria-label="Form description prompt"
-            disabled={isLoading} // Disable while any action is in progress
+            disabled={isLoading}
           />
         </CardContent>
         <CardFooter className="flex justify-end">
           <Button
             onClick={handleGenerate}
             disabled={isLoading || !prompt.trim()}
-            className="bg-primary hover:bg-primary/90 text-primary-foreground"
+            className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-primary-foreground shadow-md hover:shadow-lg transition-all"
           >
             {isGenerating ? (
               <>
@@ -126,29 +128,36 @@ export function FormGenerator() {
                 Generating...
               </>
             ) : (
-               <>
-                 <Sparkles className="mr-2 h-4 w-4" />
-                 Generate & Edit Form
-               </>
+              <>
+                <Sparkles className="mr-2 h-4 w-4" />
+                Generate & Edit Form
+              </>
             )}
           </Button>
         </CardFooter>
       </Card>
 
-      {/* "Or Build Manually" Card */}
       <Card
-        className={`shadow-md hover:shadow-lg transition-shadow ${isLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:bg-secondary/90'} bg-secondary`}
-        onClick={!isLoading ? handleStartManualBuild : undefined} // Disable click when loading
-        role="button" // Make it clear it's clickable
+        className={`shadow-xl border-0 hover:shadow-2xl transition-all duration-300 ${
+          isLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:bg-secondary/80'
+        } bg-secondary/60 backdrop-blur-sm`}
+        onClick={!isLoading ? handleStartManualBuild : undefined}
+        role="button"
         aria-label="Start building the form manually"
         aria-disabled={isLoading}
       >
         <CardHeader>
           <CardTitle className="text-2xl flex items-center gap-2">
-            {isCreatingManual ? <Loader2 className="text-accent animate-spin" /> : <Hammer className="text-accent" />}
-             Or Build Manually
+            {isCreatingManual ? (
+              <Loader2 className="text-primary animate-spin" />
+            ) : (
+              <Hammer className="text-primary" />
+            )}
+            <span className="bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
+              Or Build Manually
+            </span>
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="text-base">
             Click here to start creating your form from scratch in the editor.
           </CardDescription>
         </CardHeader>

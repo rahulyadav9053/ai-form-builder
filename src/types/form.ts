@@ -8,4 +8,7 @@ export interface FormElement {
 }
 
 // Define a type for the entire form configuration
-export type FormConfig = FormElement[];
+export interface FormConfig {
+  title?: string;
+  elements: FormElement[];
+}

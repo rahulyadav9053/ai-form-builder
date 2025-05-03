@@ -230,19 +230,6 @@ export default function DashboardPage() {
 
   return (
     <div className="container mx-auto p-4 md:p-8 min-h-screen flex flex-col bg-gradient-to-b from-background to-secondary/30">
-       <header className="mb-8 flex justify-between items-center">
-          <div>
-             <h1 className="text-3xl font-bold text-primary">Dashboard</h1>
-             <p className="text-muted-foreground mt-1">
-               Overview of your generated forms and submissions.
-             </p>
-          </div>
-         <Button variant="outline" size="sm" asChild>
-            <Link href="/">
-               <ArrowLeft className="mr-2 h-4 w-4" /> Back to Generator
-            </Link>
-         </Button>
-       </header>
 
       {/* Key Metrics - Updated to 4 columns */}
        <section className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-10">
