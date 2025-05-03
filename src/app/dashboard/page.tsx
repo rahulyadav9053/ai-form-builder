@@ -1,6 +1,6 @@
 "use client" // Add this directive because we are using hooks (useState, useEffect) for client-side rendering of charts
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { getDashboardDataAction, DashboardData} from '@/app/actions';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -44,95 +44,116 @@ interface FormSubmission {
   data: Record<string, any>;
 }
 
+interface ResponsePerForm {
+  formId: string;
+  responseCount: number;
+  createdAt: Date | null;
+  averageDurationSeconds: number | null;
+}
+
+interface DashboardStats {
+  totalForms: number;
+  totalResponses: number;
+  responsesPerForm: ResponsePerForm[];
+}
+
+interface FormTitleMap {
+  [formId: string]: string;
+}
+
 export default function DashboardPage() {
-  const [data, setData] = useState<DashboardData | null>(null);
+  const [stats, setStats] = useState<DashboardStats>({
+    totalForms: 0,
+    totalResponses: 0,
+    responsesPerForm: [],
+  });
+  const [formTitles, setFormTitles] = useState<FormTitleMap>({});
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
-  const [submissions, setSubmissions] = useState<FormSubmission[]>([]);
-  const [formTitles, setFormTitles] = useState<Map<string, string>>(new Map());
 
   const { logOut } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    async function fetchData() {
-      setIsLoading(true);
+    async function fetchDashboardData() {
+      setLoading(true);
       try {
-        // First, get all form configurations to map IDs to titles
+        // Fetch all forms
         const formsRef = collection(db, "formConfigs");
         const formsSnapshot = await getDocs(formsRef);
-        const titles = new Map();
+        const titles: FormTitleMap = {};
+        const formCreatedAt: { [formId: string]: Date | null } = {};
         formsSnapshot.forEach(doc => {
-          titles.set(doc.id, doc.data().config.title || "Untitled Form");
+          const data = doc.data();
+          titles[doc.id] = data.config?.title || "Untitled Form";
+          formCreatedAt[doc.id] = data.createdAt?.toDate ? data.createdAt.toDate() : null;
+        });
+
+        // Fetch all submissions
+        const submissionsRef = collection(db, "formSubmissions");
+        const submissionsSnapshot = await getDocs(submissionsRef);
+
+        // Aggregate responses per form
+        const responseMap: { [formId: string]: { count: number; totalDuration: number; durationCount: number } } = {};
+        submissionsSnapshot.forEach(doc => {
+          const data = doc.data();
+          const formId = data.formId;
+          if (!formId) return;
+          if (!responseMap[formId]) {
+            responseMap[formId] = { count: 0, totalDuration: 0, durationCount: 0 };
+          }
+          responseMap[formId].count += 1;
+          if (typeof data.durationMs === 'number') {
+            responseMap[formId].totalDuration += data.durationMs / 1000;
+            responseMap[formId].durationCount += 1;
+          }
+        });
+
+        const responsesPerForm: ResponsePerForm[] = Object.entries(responseMap).map(([formId, agg]) => ({
+          formId,
+          responseCount: agg.count,
+          createdAt: formCreatedAt[formId] || null,
+          averageDurationSeconds: agg.durationCount > 0 ? agg.totalDuration / agg.durationCount : null,
+        }));
+
+        setStats({
+          totalForms: formsSnapshot.size,
+          totalResponses: submissionsSnapshot.size,
+          responsesPerForm,
         });
         setFormTitles(titles);
-
-        const result = await getDashboardDataAction();
-        if ('error' in result) {
-          setError(result.error);
-          setData(null);
-        } else {
-          setData(result);
-          setError(null);
-
-          // Prepare data for the chart (e.g., top 10 forms by responses)
-          const sortedForms = [...result.responsesPerForm].sort((a, b) => b.responseCount - a.responseCount);
-          const topForms = sortedForms.slice(0, 10); // Limit to top 10 forms for chart clarity
-
-          setChartData(topForms.map(form => ({
-            formIdShort: titles.get(form.formId) || form.formId.substring(0, 6) + '...', // Use title if available
-            fullFormId: form.formId,
-            responses: form.responseCount,
-            createdAt: form.createdAt ? format(form.createdAt, 'MMM d, yyyy') : 'Unknown Date',
-            avgDurationSeconds: form.averageDurationSeconds,
-          })));
-        }
-      } catch (error) {
-        console.error("Error fetching data:", error);
-        setError("Failed to load dashboard data");
+        setError(null);
+      } catch (err: any) {
+        setError(err.message || 'Unknown error');
       } finally {
-        setIsLoading(false);
+        setLoading(false);
       }
     }
-    fetchData();
+    fetchDashboardData();
   }, []);
 
-  useEffect(() => {
-    fetchSubmissions();
-  }, []);
+  // Memoize chart data
+  const chartData = useMemo(() => {
+    return stats.responsesPerForm
+      .sort((a, b) => b.responseCount - a.responseCount)
+      .slice(0, 10)
+      .map(form => ({
+        formIdShort: form.formId.slice(0, 6) + '...',
+        fullFormId: form.formId,
+        responses: form.responseCount,
+        createdAt: form.createdAt ? format(form.createdAt, 'MMM d, yyyy') : 'Unknown',
+        avgDurationSeconds: form.averageDurationSeconds,
+      }));
+  }, [stats.responsesPerForm]);
 
-  const fetchSubmissions = async () => {
-    try {
-      // First, get all form configurations to map IDs to titles
-      const formsRef = collection(db, "formConfigs");
-      const formsSnapshot = await getDocs(formsRef);
-      const formTitles = new Map();
-      formsSnapshot.forEach(doc => {
-        formTitles.set(doc.id, doc.data().config.title || "Untitled Form");
-      });
-
-      // Then get all submissions
-      const submissionsRef = collection(db, "formSubmissions");
-      const q = query(submissionsRef, orderBy("submittedAt", "desc"));
-      const querySnapshot = await getDocs(q);
-
-      const submissionsData = querySnapshot.docs.map(doc => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          formId: data.formId,
-          formTitle: formTitles.get(data.formId) || "Unknown Form",
-          submittedAt: data.submittedAt?.toDate() || new Date(),
-          data: data.data || {},
-        };
-      });
-
-      setSubmissions(submissionsData);
-    } catch (error) {
-      console.error("Error fetching submissions:", error);
-    }
-  };
+  // Calculate overall average submission time
+  const totalDurationSum = stats.responsesPerForm.reduce((sum, form) => {
+    return sum + (form.averageDurationSeconds !== null && form.responseCount > 0 ? form.averageDurationSeconds * form.responseCount : 0);
+  }, 0);
+  const totalResponsesWithDuration = stats.responsesPerForm.reduce((sum, form) => {
+    return sum + (form.averageDurationSeconds !== null ? form.responseCount : 0);
+  }, 0);
+  const overallAvgDurationSeconds = totalResponsesWithDuration > 0 ? totalDurationSum / totalResponsesWithDuration : null;
 
   const handleLogout = async () => {
     try {
@@ -143,7 +164,7 @@ export default function DashboardPage() {
     }
   };
 
-  if (isLoading) {
+  if (loading) {
     return (
         <div className="container mx-auto p-4 md:p-8 min-h-screen flex flex-col bg-gradient-to-b from-background to-secondary/30">
             <header className="mb-8 flex justify-between items-center">
@@ -278,7 +299,7 @@ export default function DashboardPage() {
     );
   }
 
-  if (!data) {
+  if (!stats.responsesPerForm.length) {
      return (
         <div className="container mx-auto p-4 md:p-8 min-h-screen flex items-center justify-center">
            <p>No data available.</p>
@@ -290,19 +311,6 @@ export default function DashboardPage() {
         </div>
      );
    }
-
-  const { totalForms, totalResponses, responsesPerForm } = data;
-
-   // Calculate overall average submission time
-   const totalDurationSum = responsesPerForm.reduce((sum, form) => {
-      // Only include if averageDurationSeconds is a valid number
-      return sum + (form.averageDurationSeconds !== null && form.responseCount > 0 ? form.averageDurationSeconds * form.responseCount : 0);
-   }, 0);
-   const totalResponsesWithDuration = responsesPerForm.reduce((sum, form) => {
-        // Count responses for forms that *have* an average duration calculated
-       return sum + (form.averageDurationSeconds !== null ? form.responseCount : 0);
-   }, 0);
-   const overallAvgDurationSeconds = totalResponsesWithDuration > 0 ? totalDurationSum / totalResponsesWithDuration : null;
 
   return (
     <ProtectedRoute>
@@ -319,7 +327,7 @@ export default function DashboardPage() {
                <FileText className="h-5 w-5 text-primary" />
              </CardHeader>
              <CardContent>
-               <div className="text-3xl font-bold text-foreground">{totalForms}</div>
+               <div className="text-3xl font-bold text-foreground">{stats.totalForms}</div>
                {/* Optional description */}
              </CardContent>
            </Card>
@@ -329,7 +337,7 @@ export default function DashboardPage() {
                <ListChecks className="h-5 w-5 text-primary" />
              </CardHeader>
              <CardContent>
-               <div className="text-3xl font-bold text-foreground">{totalResponses}</div>
+               <div className="text-3xl font-bold text-foreground">{stats.totalResponses}</div>
                <p className="text-xs text-muted-foreground">
                  Across all forms
                </p>
@@ -342,7 +350,7 @@ export default function DashboardPage() {
              </CardHeader>
              <CardContent>
                 <div className="text-3xl font-bold text-foreground">
-                   {totalForms > 0 ? (totalResponses / totalForms).toFixed(1) : 0}
+                   {stats.totalForms > 0 ? (stats.totalResponses / stats.totalForms).toFixed(1) : 0}
                 </div>
                 <p className="text-xs text-muted-foreground">
                     Average submissions per form
@@ -447,8 +455,8 @@ export default function DashboardPage() {
                 Form Submissions
               </CardTitle>
             </CardHeader>
-            <CardContent className={`p-0 flex-grow ${responsesPerForm.length === 0 ? 'flex items-center justify-center' : ''}`}>
-              {responsesPerForm.length > 0 ? (
+            <CardContent className={`p-0 flex-grow ${stats.responsesPerForm.length === 0 ? 'flex items-center justify-center' : ''}`}>
+              {stats.responsesPerForm.length > 0 ? (
                 <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
@@ -461,7 +469,7 @@ export default function DashboardPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {responsesPerForm.map((form) => (
+                      {stats.responsesPerForm.map((form) => (
                         <TableRow
                           key={form.formId}
                           className="hover:bg-muted/30 transition-colors group"
@@ -474,7 +482,7 @@ export default function DashboardPage() {
                                 rel="noopener noreferrer"
                                 className="hover:underline text-foreground/90 group-hover:text-primary transition-colors"
                               >
-                                {formTitles.get(form.formId) || "Untitled Form"}
+                                {formTitles[form.formId] || "Untitled Form"}
                               </Link>
 
                             </div>

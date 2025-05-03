@@ -3,8 +3,6 @@
 import React, { useState } from 'react';
 import { analyzeData } from '@/lib/api';
 import { AnalysisResult, AnalysisStatus } from '@/types/data';
-
-import Header from '@/components/analysis/Header';
 import DataInput from '@/components/analysis/DataInput';
 import DataVisualizer from '@/components/analysis/DataVisualizer';
 import InsightCard from '@/components/analysis/InsightCard';
@@ -144,14 +142,7 @@ export default function Page() {
               </div>
             )}
 
-            {/* <div className="mt-8 text-center">
-              <button
-                onClick={() => setStatus({ status: 'idle' })}
-                className="px-6 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white rounded hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
-              >
-                Analyze Different Data
-              </button>
-            </div> */}
+
           </div>
         );
 
