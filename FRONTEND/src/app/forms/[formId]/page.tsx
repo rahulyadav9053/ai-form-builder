@@ -34,12 +34,6 @@ export default async function FormPage({ params }: FormPageProps) {
 
   return (
     <div className="container mx-auto p-4 md:p-8 min-h-screen flex flex-col items-center">
-       <header className="mb-8 text-center w-full max-w-3xl">
-         <h1 className="text-3xl font-bold text-primary">Complete the Form</h1>
-         <p className="text-muted-foreground mt-2">
-            Please fill out the details below.
-         </p>
-       </header>
       <main className="w-full max-w-3xl">
         <FormRenderer formConfig={result.formConfig} formId={formId} />
       </main>

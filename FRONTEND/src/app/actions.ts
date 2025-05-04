@@ -84,11 +84,11 @@ export async function getSubmissionsByFormId(formId: string): Promise<{ submissi
 }
 
 // NEW: Update an existing form configuration by ID
-export async function updateFormConfigAction(formId: string, formConfig: FormConfig): Promise<{ success: boolean } | { error: string }> {
+export async function updateFormConfigAction(formId: string, formConfig: FormConfig): Promise<{ success: boolean, docId?: string } | { error: string }> {
     if (!formId) {
         return { error: "Form ID is required to update." };
     }
-    if (!formConfig) { // Allow saving empty config []
+    if (!formConfig) {
         return { error: "Form configuration is missing." };
     }
 
@@ -101,7 +101,7 @@ export async function updateFormConfigAction(formId: string, formConfig: FormCon
              lastModified: serverTimestamp(),
         });
         console.log(`Document ${formId} updated successfully.`);
-        return { success: true };
+        return { success: true, docId: formId };
     } catch (error: any) {
         console.error(`Error updating form config ${formId} in Firestore:`, error);
         return { error: error.message || "Failed to update form configuration." };

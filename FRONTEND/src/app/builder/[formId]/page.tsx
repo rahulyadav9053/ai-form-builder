@@ -52,7 +52,7 @@ export default async function FormEditPage({ params }: FormEditPageProps) {
 
 export async function generateMetadata({ params }: FormEditPageProps) {
   return {
-    title: `Edit Form ${params.formId}`,
+    title: `Form Builder`,
     description: `Edit the form configuration for ID ${params.formId}.`,
   };
 }
