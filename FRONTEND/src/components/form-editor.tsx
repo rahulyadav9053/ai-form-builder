@@ -9,7 +9,7 @@ import { Select, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
-import { updateFormConfigAction } from '@/app/actions'; // Use update action
+import { updateFormConfigAction, createNewFormConfigAction } from '@/app/actions'; // Use update action and import the new server action
 import type { FormConfig, FormElement } from '@/types/form';
 import { Loader2, Plus, Trash2, Save, Link as LinkIcon, Edit, GripVertical, Pencil } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
@@ -46,6 +46,7 @@ import {
 interface FormEditorProps {
   initialConfig: FormConfig;
   formId: string;
+  isNewForm?: boolean;
 }
 
 interface SortableFormElementProps {
@@ -240,7 +241,7 @@ function SortableFormElement({ element, index, onRemove, onEdit, isSaving }: Sor
   );
 }
 
-export function FormEditor({ initialConfig, formId }: FormEditorProps) {
+export function FormEditor({ initialConfig, formId, isNewForm = false }: FormEditorProps) {
   const [formConfig, setFormConfig] = useState<FormConfig>({
     title: initialConfig.title || '',
     elements: initialConfig.elements || []
@@ -364,6 +365,35 @@ export function FormEditor({ initialConfig, formId }: FormEditorProps) {
     }
 
     startSavingTransition(async () => {
+      if (isNewForm) {
+        // Use server action to create new doc in Firestore and redirect to /edit/[newId]
+        const result = await createNewFormConfigAction(formConfig);
+        if ('error' in result) {
+          toast({
+            title: "Save Failed",
+            description: result.error,
+            variant: "destructive",
+          });
+        } else {
+          setHasChanges(false);
+          toast({
+            title: "Form Created!",
+            description: (
+              <div>
+                Your new form has been created.<br />
+                <Link href={`/forms/${result.docId}`} target="_blank" rel="noopener noreferrer" className="text-primary underline hover:text-primary/80 inline-flex items-center gap-1">
+                  View Live Form <LinkIcon className="h-3 w-3" />
+                </Link>
+              </div>
+            ),
+            variant: "default",
+            duration: 10000,
+          });
+          // Redirect to the new edit page
+          window.location.href = `/forms/${result.docId}`;
+        }
+        return;
+      }
       const result = await updateFormConfigAction(formId, formConfig);
       if ('error' in result) {
         toast({
@@ -378,7 +408,7 @@ export function FormEditor({ initialConfig, formId }: FormEditorProps) {
           description: (
             <div>
               Your changes have been saved successfully.<br />
-              <Link href={`/${formId}`} target="_blank" rel="noopener noreferrer" className="text-primary underline hover:text-primary/80 inline-flex items-center gap-1">
+              <Link href={`/forms/${formId}`} target="_blank" rel="noopener noreferrer" className="text-primary underline hover:text-primary/80 inline-flex items-center gap-1">
                 View Live Form <LinkIcon className="h-3 w-3" />
               </Link>
             </div>

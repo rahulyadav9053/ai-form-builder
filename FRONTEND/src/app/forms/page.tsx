@@ -85,7 +85,7 @@ export default function FormsPage() {
         <div className="text-center py-12">
           <p className="text-muted-foreground mb-4">No forms created yet</p>
           <Button asChild>
-            <Link href="/">
+            <Link href="/builder/new">
               Create Your First Form
             </Link>
           </Button>
@@ -107,7 +107,7 @@ export default function FormsPage() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => router.push(`/edit/${form.id}`)}
+                      onClick={() => router.push(`/builder/${form.id}`)}
                       className="h-8 w-8 hover:bg-primary/10 transition-colors"
                     >
                       <Edit className="h-4 w-4" />

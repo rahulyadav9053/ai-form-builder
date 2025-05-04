@@ -38,54 +38,23 @@ export function FormGenerator() {
 
     setMode(GeneratorMode.AI_Generating);
 
-    // Using startTransition for the async action
     startGenerateTransition(async () => {
-      const result = await generateFormConfigAction({ prompt }); // This now saves and returns ID
+      const result = await generateFormConfigAction({ prompt });
       if ('error' in result) {
          toast({
             title: "Generation Failed",
             description: result.error,
             variant: "destructive",
          });
-         setMode(GeneratorMode.Idle); // Revert to idle on error
+         setMode(GeneratorMode.Idle);
       } else {
-        // toast({
-        //    title: "Form Generated & Saved!",
-        //    description: `Redirecting you to the editor... (ID: ${result.docId})`,
-        //    variant: "default",
-        // });
-         // Redirect to the new edit page
-         router.push(`/edit/${result.docId}`);
-         // Optional: Reset prompt after successful generation?
-         // setPrompt('');
-         // setMode(GeneratorMode.Idle); // Reset mode after redirect? Or let page handle it.
+         router.push(`/builder/${result.docId}`);
       }
     });
   };
 
   const handleStartManualBuild = () => {
-      setMode(GeneratorMode.Manual_Creating); // Indicate creating state
-
-      startManualCreateTransition(async () => {
-          const result = await createEmptyFormAction(); // Call action to create empty form
-          if ('error' in result) {
-              toast({
-                  title: "Failed to Start Manual Build",
-                  description: result.error,
-                  variant: "destructive",
-              });
-              setMode(GeneratorMode.Idle); // Revert to idle on error
-          } else {
-              toast({
-                  title: "Manual Build Ready",
-                  description: "Redirecting you to the editor...",
-                  variant: "default",
-              });
-               // Redirect to the edit page with the new empty form's ID
-               router.push(`/edit/${result.docId}`);
-               // setMode(GeneratorMode.Idle); // Reset mode after redirect?
-          }
-      });
+    router.push('/builder/new');
   };
 
 
@@ -102,7 +71,7 @@ export function FormGenerator() {
             </span>
           </CardTitle>
           <CardDescription className="text-base">
-            Enter a description and let AI generate the form, or start building manually below.
+            Enter a description and let AI generate the form.
           </CardDescription>
         </CardHeader>
         <CardContent>

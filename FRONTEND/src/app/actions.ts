@@ -134,6 +134,10 @@ export async function getFormConfigAction(formId: string): Promise<{ formConfig:
     return { error: "Form ID is required." };
   }
 
+  if(formId == "new") {
+    return { formConfig: { title: 'Untitled Form', elements: [] } };
+  }
+
   try {
     console.log(`Fetching form config from Firestore with ID: ${formId}`);
     const docRef = doc(db, "formConfigs", formId);
@@ -311,4 +315,17 @@ export async function getDashboardDataAction(): Promise<DashboardActionResult> {
 // Helper action to navigate (can be called after other actions)
 export async function navigateToEditPage(formId: string) {
     redirect(`/edit/${formId}`);
+}
+
+// NEW: Create a new form config and return the ID
+export async function createNewFormConfigAction(formConfig: FormConfig): Promise<{ docId: string } | { error: string }> {
+  try {
+    const docRef = await addDoc(collection(db, "formConfigs"), {
+      config: formConfig,
+      createdAt: serverTimestamp(),
+    });
+    return { docId: docRef.id };
+  } catch (error: any) {
+    return { error: error.message || "Failed to create new form." };
+  }
 }

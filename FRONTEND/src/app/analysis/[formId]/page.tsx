@@ -72,7 +72,7 @@ export default function AnalysisPage() {
   // Success
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
-      <h2 className="text-2xl font-bold mb-6">Data Analysis Results</h2>
+      <h2 className="text-2xl font-bold mb-6">{insights.length > 0? "Data Analysis Results" :"No Data Available"}</h2>
       {insights.length > 0 && (
         <section className="mb-8">
           <h3 className="text-xl font-semibold mb-4">Key Insights</h3>

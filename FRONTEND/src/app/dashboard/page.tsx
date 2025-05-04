@@ -232,11 +232,7 @@ export default function DashboardPage() {
   return (
     <ProtectedRoute>
       <div className="container mx-auto p-4 md:p-8 min-h-screen flex flex-col bg-gradient-to-b from-background to-secondary/30">
-        <header className="mb-8 flex justify-between items-center">
-          <h1 className="text-3xl font-bold">Dashboard</h1>
-        </header>
 
-        {/* Key Metrics - Updated to 4 columns */}
          <section className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-10">
            <Card className="shadow-md hover:shadow-lg transition-shadow duration-300 ease-in-out border border-border/50">
              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -245,7 +241,6 @@ export default function DashboardPage() {
              </CardHeader>
              <CardContent>
                <div className="text-3xl font-bold text-foreground">{stats.totalForms}</div>
-               {/* Optional description */}
              </CardContent>
            </Card>
            <Card className="shadow-md hover:shadow-lg transition-shadow duration-300 ease-in-out border border-border/50">
@@ -274,7 +269,6 @@ export default function DashboardPage() {
                 </p>
              </CardContent>
             </Card>
-            {/* New Card for Average Submission Time */}
             <Card className="shadow-md hover:shadow-lg transition-shadow duration-300 ease-in-out border border-border/50">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                  <CardTitle className="text-sm font-medium text-muted-foreground">Avg. Submission Time</CardTitle>
@@ -291,7 +285,6 @@ export default function DashboardPage() {
              </Card>
          </section>
 
-         {/* Charts Section */}
          <section className="grid gap-6 lg:grid-cols-1 mb-10">
             <Card className="shadow-lg border border-border/50">
                <CardHeader className="border-b border-border/50">
@@ -314,21 +307,21 @@ export default function DashboardPage() {
                                   tickLine={false}
                                   tickMargin={10}
                                   axisLine={false}
-                                  tickFormatter={(value) => value} // Display short ID directly
+                                  tickFormatter={(value) => value}
                                  />
                                 <YAxis
                                      tickLine={false}
                                      axisLine={false}
                                      tickMargin={10}
-                                     allowDecimals={false} // Ensure whole numbers for counts
+                                     allowDecimals={false}
                                  />
                                 <ChartTooltip
                                   cursor={false}
                                   content={
                                      <ChartTooltipContent
                                           indicator="dot"
-                                          labelKey="fullFormId" // Show full ID in tooltip label
-                                          formatter={(value, name, props) => ( // Custom formatter for tooltip
+                                          labelKey="fullFormId"
+                                          formatter={(value, name, props) => (
                                               <div className="flex flex-col gap-0.5 p-1">
                                                    <span className="font-semibold">{props.payload.fullFormId}</span>
                                                    <span className="text-muted-foreground text-xs">
@@ -337,7 +330,6 @@ export default function DashboardPage() {
                                                     {name === 'responses' && (
                                                       <span className="font-bold text-primary">{value} Responses</span>
                                                     )}
-                                                     {/* Display Avg Time in Tooltip */}
                                                     {props.payload.avgDurationSeconds !== null && (
                                                         <span className="text-xs text-muted-foreground">
                                                             Avg. Time: {formatDuration(props.payload.avgDurationSeconds)}
@@ -349,7 +341,6 @@ export default function DashboardPage() {
                                   }
                                 />
                                <Bar dataKey="responses" fill="var(--color-responses)" radius={4} />
-                               {/* Optional Legend: <ChartLegend content={<ChartLegendContent />} /> */}
                            </BarChart>
                            </ResponsiveContainer>
                        </ChartContainer>
@@ -441,7 +432,7 @@ export default function DashboardPage() {
                                 className="h-8 w-8 text-primary hover:bg-primary/10"
                                 title="View Live Form"
                               >
-                                <Link href={`/${form.formId}`} target="_blank" rel="noopener noreferrer">
+                                <Link href={`/forms/${form.formId}`} target="_blank" rel="noopener noreferrer">
                                   <Eye className="h-4 w-4" />
                                 </Link>
                               </Button>
@@ -452,7 +443,7 @@ export default function DashboardPage() {
                                 className="h-8 w-8 text-accent hover:bg-accent/10"
                                 title="Edit Form"
                               >
-                                <Link href={`/edit/${form.formId}`}>
+                                <Link href={`/builder/${form.formId}`}>
                                   <Edit className="h-4 w-4" />
                                 </Link>
                               </Button>
