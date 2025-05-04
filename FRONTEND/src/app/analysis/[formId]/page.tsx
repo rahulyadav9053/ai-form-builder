@@ -5,10 +5,13 @@ import { useParams } from "next/navigation";
 import DataVisualizer from "@/components/analysis/DataVisualizer";
 import InsightCard from "@/components/analysis/InsightCard";
 import { ENDPOINTS } from "@/constants";
+import ProtectedRoute from "@/components/protected-route";
 
 export default function AnalysisPage() {
   const { formId } = useParams();
-  const [status, setStatus] = useState<"idle" | "loading" | "error" | "success">("idle");
+  const [status, setStatus] = useState<
+    "idle" | "loading" | "error" | "success"
+  >("idle");
   const [error, setError] = useState<string | null>(null);
   const [insights, setInsights] = useState<any[]>([]);
   const [charts, setCharts] = useState<any[]>([]);
@@ -19,7 +22,9 @@ export default function AnalysisPage() {
       setStatus("loading");
       setError(null);
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_PATH}${ENDPOINTS.ANALYSIS}/${formId}`);
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_BASE_PATH}${ENDPOINTS.ANALYSIS}/${formId}`
+        );
         if (!res.ok) {
           const errorText = await res.text();
           setError(`API error: ${res.status} - ${errorText}`);
@@ -65,35 +70,41 @@ export default function AnalysisPage() {
   if (status === "idle") {
     return (
       <div className="flex flex-col items-center justify-center min-h-[40vh]">
-        <p className="text-lg text-gray-600">Ready to analyze form submissions.</p>
+        <p className="text-lg text-gray-600">
+          Ready to analyze form submissions.
+        </p>
       </div>
     );
   }
 
   // Success
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
-      <h2 className="text-2xl font-bold mb-6">{insights.length > 0? "Data Analysis Results" :"No Data Available"}</h2>
-      {insights.length > 0 && (
-        <section className="mb-8">
-          <h3 className="text-xl font-semibold mb-4">Key Insights</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {insights.map((insight) => (
-              <InsightCard key={insight.id} insight={insight} />
-            ))}
-          </div>
-        </section>
-      )}
-      {charts.length > 0 && (
-        <section>
-          <h3 className="text-xl font-semibold mb-4">Data Visualizations</h3>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {charts.map((chart) => (
-              <DataVisualizer key={chart.id} chartData={chart} />
-            ))}
-          </div>
-        </section>
-      )}
-    </div>
+    <ProtectedRoute>
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        <h2 className="text-2xl font-bold mb-6">
+          {insights.length > 0 ? "Data Analysis Results" : "No Data Available"}
+        </h2>
+        {insights.length > 0 && (
+          <section className="mb-8">
+            <h3 className="text-xl font-semibold mb-4">Key Insights</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {insights.map((insight) => (
+                <InsightCard key={insight.id} insight={insight} />
+              ))}
+            </div>
+          </section>
+        )}
+        {charts.length > 0 && (
+          <section>
+            <h3 className="text-xl font-semibold mb-4">Data Visualizations</h3>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {charts.map((chart) => (
+                <DataVisualizer key={chart.id} chartData={chart} />
+              ))}
+            </div>
+          </section>
+        )}
+      </div>
+    </ProtectedRoute>
   );
 }

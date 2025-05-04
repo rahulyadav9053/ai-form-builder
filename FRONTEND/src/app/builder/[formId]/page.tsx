@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { FormEditor } from "@/components/form-editor";
 import { Footer } from "@/components/footer";
 import { getFormConfigAction } from "@/app/actions";
+import ProtectedRoute from "@/components/protected-route";
 
 interface FormEditPageProps {
   params: {
@@ -41,12 +42,18 @@ export default async function FormEditPage({ params }: FormEditPageProps) {
   }
 
   return (
-    <div className="container mx-auto p-4 md:p-8 min-h-screen flex flex-col">
-      <main className="flex-grow w-full max-w-4xl mx-auto">
-        <FormEditor initialConfig={result.formConfig} formId={formId} isNewForm={formId === "new" ? true : false} />
-      </main>
-      <Footer />
-    </div>
+    <ProtectedRoute>
+      <div className="container mx-auto p-4 md:p-8 min-h-screen flex flex-col">
+        <main className="flex-grow w-full max-w-4xl mx-auto">
+          <FormEditor
+            initialConfig={result.formConfig}
+            formId={formId}
+            isNewForm={formId === "new" ? true : false}
+          />
+        </main>
+        <Footer />
+      </div>
+    </ProtectedRoute>
   );
 }
 
