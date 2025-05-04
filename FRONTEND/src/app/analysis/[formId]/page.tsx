@@ -1,162 +1,98 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import { analyzeData } from '@/lib/api';
-import { AnalysisResult, AnalysisStatus } from '@/types/data';
-import DataInput from '@/components/analysis/DataInput';
-import DataVisualizer from '@/components/analysis/DataVisualizer';
-import InsightCard from '@/components/analysis/InsightCard';
-import LoadingState from '@/components/analysis/LoadingState';
-import ErrorState from '@/components/analysis/ErrorState';
+import React, { useState, useEffect } from "react";
+import { useParams } from "next/navigation";
+import DataVisualizer from "@/components/analysis/DataVisualizer";
+import InsightCard from "@/components/analysis/InsightCard";
 
-import { Download, Share2 } from 'lucide-react';
+export default function AnalysisPage() {
+  const { formId } = useParams();
+  const [status, setStatus] = useState<"idle" | "loading" | "error" | "success">("idle");
+  const [error, setError] = useState<string | null>(null);
+  const [insights, setInsights] = useState<any[]>([]);
+  const [charts, setCharts] = useState<any[]>([]);
 
-export default function Page() {
-  const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
-  const [status, setStatus] = useState<AnalysisStatus>({ status: 'idle' });
-  const [currentData, setCurrentData] = useState<any>(null);
-
-  const handleDataSubmit = async (data: any) => {
-    setStatus({ status: 'loading' });
-    setCurrentData(data);
-
-    try {
-      const result = await analyzeData(data);
-      setAnalysisResult(result);
-      setStatus({ status: 'success' });
-    } catch (error) {
-      console.error('Analysis error:', error);
-      setStatus({
-        status: 'error',
-        error: error instanceof Error ? error.message : 'Unknown error occurred',
-      });
-    }
-  };
-
-  const handleRetry = () => {
-    if (currentData) {
-      handleDataSubmit(currentData);
-    } else {
-      setStatus({ status: 'idle' });
-    }
-  };
-
-  const handleDownloadResults = () => {
-    if (!analysisResult) return;
-
-    const resultsData = {
-      originalData: currentData,
-      insights: analysisResult.insights,
-      charts: analysisResult.charts,
-      generatedAt: new Date().toISOString(),
-    };
-
-    const blob = new Blob([JSON.stringify(resultsData, null, 2)], {
-      type: 'application/json',
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `data-analysis-${new Date().toISOString().slice(0, 10)}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
-
-  const handleShareResults = async () => {
-    if (!analysisResult) return;
-
-    if (navigator.share) {
+  useEffect(() => {
+    if (!formId) return;
+    const fetchAnalysis = async () => {
+      setStatus("loading");
+      setError(null);
       try {
-        await navigator.share({
-          title: 'Data Analysis Results',
-          text: `Here are my data insights: ${analysisResult.insights
-            .map((i) => i.title)
-            .join(', ')}`,
-        });
-      } catch (err) {
-        console.error('Share failed:', err);
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_PATH}/api/dashboard/analysis/${formId}`);
+        if (!res.ok) {
+          const errorText = await res.text();
+          setError(`API error: ${res.status} - ${errorText}`);
+          setStatus("error");
+          return;
+        }
+        const data = await res.json();
+        setInsights(data.insights || []);
+        setCharts(data.charts || []);
+        setStatus("success");
+      } catch (err: any) {
+        setError(err.message || "Unknown error");
+        setStatus("error");
       }
-    } else {
-      alert('Web Share API not supported in your browser');
-    }
-  };
+    };
+    fetchAnalysis();
+  }, [formId]);
 
-  const renderContent = () => {
-    switch (status.status) {
-      case 'loading':
-        return <LoadingState />;
+  if (status === "loading") {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[40vh]">
+        <span className="animate-spin h-8 w-8 border-4 border-primary-600 border-t-transparent rounded-full mb-4" />
+        <p className="text-lg text-gray-600">Analyzing submissions...</p>
+      </div>
+    );
+  }
 
-      case 'error':
-        return <ErrorState message={status.error || ''} onRetry={handleRetry} />;
+  if (status === "error") {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[40vh] text-red-600">
+        <p className="text-lg font-semibold mb-2">Error</p>
+        <p>{error}</p>
+        <button
+          className="mt-4 px-4 py-2 bg-primary-600 text-white rounded"
+          onClick={() => setStatus("idle")}
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
 
-      case 'success':
-        if (!analysisResult) return null;
+  if (status === "idle") {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[40vh]">
+        <p className="text-lg text-gray-600">Ready to analyze form submissions.</p>
+      </div>
+    );
+  }
 
-        return (
-          <div className="animate-fade-in">
-            <div className="mb-6 flex justify-between items-center">
-              <h2 className="text-2xl font-bold text-gray-800 dark:text-white">
-                Data Analysis Results
-              </h2>
-              <div className="flex gap-3">
-                <button
-                  onClick={handleDownloadResults}
-                  className="flex items-center gap-1 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white rounded hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors text-sm"
-                >
-                  <Download size={16} /> Download
-                </button>
-                <button
-                  onClick={handleShareResults}
-                  className="flex items-center gap-1 px-4 py-2 bg-primary-600 text-white rounded hover:bg-primary-700 transition-colors text-sm"
-                >
-                  <Share2 size={16} /> Share
-                </button>
-              </div>
-            </div>
-
-            {analysisResult.insights.length > 0 && (
-              <div className="mb-8">
-                <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">
-                  Key Insights
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {analysisResult.insights.map((insight) => (
-                    <InsightCard key={insight.id} insight={insight} />
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {analysisResult.charts.length > 0 && (
-              <div>
-                <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">
-                  Data Visualizations
-                </h3>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {analysisResult.charts.map((chart) => (
-                    <DataVisualizer key={chart.id} chartData={chart} />
-                  ))}
-                </div>
-              </div>
-            )}
-
-
-          </div>
-        );
-
-      case 'idle':
-      default:
-        return <DataInput onDataSubmit={handleDataSubmit} />;
-    }
-  };
-
+  // Success
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-white">
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {renderContent()}
-      </main>
+    <div className="max-w-7xl mx-auto px-4 py-8">
+      <h2 className="text-2xl font-bold mb-6">Data Analysis Results</h2>
+      {insights.length > 0 && (
+        <section className="mb-8">
+          <h3 className="text-xl font-semibold mb-4">Key Insights</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {insights.map((insight) => (
+              <InsightCard key={insight.id} insight={insight} />
+            ))}
+          </div>
+        </section>
+      )}
+      {charts.length > 0 && (
+        <section>
+          <h3 className="text-xl font-semibold mb-4">Data Visualizations</h3>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {charts.map((chart) => (
+              <DataVisualizer key={chart.id} chartData={chart} />
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }

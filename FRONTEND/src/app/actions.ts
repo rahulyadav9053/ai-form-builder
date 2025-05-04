@@ -70,7 +70,7 @@ export async function getSubmissionsByFormId(formId: string): Promise<{ submissi
     return { error: 'formId is required' };
   }
   try {
-    const res = await fetch(`http://localhost:4001/api/dashboard/analysis/${formId}`);
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_PATH}/api/dashboard/analysis/${formId}`);
     if (!res.ok) {
       const errorText = await res.text();
       return { error: `API error: ${res.status} - ${errorText}` };

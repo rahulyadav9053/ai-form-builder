@@ -51,7 +51,7 @@ export default function DashboardPage() {
     async function fetchDashboardData() {
       setLoading(true);
       try {
-        const res = await fetch('http://localhost:4001/api/dashboard');
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_PATH}/api/dashboard`);
         if (!res.ok) throw new Error('Failed to fetch dashboard data');
         const data = await res.json();
         setStats(data);
@@ -136,7 +136,7 @@ export default function DashboardPage() {
                   </Card>
             </section>
 
-            <section className="grid gap-6 lg:grid-cols-1 mb-10"> {/* Changed to 1 column */}
+            <section className="grid gap-6 lg:grid-cols-1 mb-10">
                  <Card className="shadow-lg border border-border/50 h-[350px] flex flex-col">
                       <CardHeader className="border-b border-border/50">
                            <Skeleton className="h-6 w-48" />
@@ -160,21 +160,21 @@ export default function DashboardPage() {
                                <Table>
                                    <TableHeader>
                                        <TableRow className="bg-muted/50 hover:bg-muted/50">
-                                           <TableHead><Skeleton className="h-5 w-24" /></TableHead> {/* Form ID */}
-                                           <TableHead><Skeleton className="h-5 w-20" /></TableHead> {/* Created */}
-                                           <TableHead className="text-right"><Skeleton className="h-5 w-16 ml-auto" /></TableHead> {/* Responses */}
-                                           <TableHead className="text-right"><Skeleton className="h-5 w-20 ml-auto" /></TableHead> {/* Avg Time */}
-                                           <TableHead className="text-right"><Skeleton className="h-5 w-16 ml-auto" /></TableHead> {/* Actions */}
+                                           <TableHead><Skeleton className="h-5 w-24" /></TableHead>
+                                           <TableHead><Skeleton className="h-5 w-20" /></TableHead>
+                                           <TableHead className="text-right"><Skeleton className="h-5 w-16 ml-auto" /></TableHead>
+                                           <TableHead className="text-right"><Skeleton className="h-5 w-20 ml-auto" /></TableHead>
+                                           <TableHead className="text-right"><Skeleton className="h-5 w-16 ml-auto" /></TableHead>
                                        </TableRow>
                                    </TableHeader>
                                    <TableBody>
-                                       {[...Array(5)].map((_, i) => ( // Simulate 5 rows
+                                       {[...Array(5)].map((_, i) => (
                                            <TableRow key={i} className="hover:bg-muted/30">
-                                               <TableCell><Skeleton className="h-5 w-32" /></TableCell> {/* Form ID */}
-                                               <TableCell><Skeleton className="h-5 w-24" /></TableCell> {/* Created */}
-                                               <TableCell className="text-right"><Skeleton className="h-5 w-8 ml-auto" /></TableCell> {/* Responses */}
-                                               <TableCell className="text-right"><Skeleton className="h-5 w-12 ml-auto" /></TableCell> {/* Avg Time */}
-                                               <TableCell className="text-right"><Skeleton className="h-5 w-16 ml-auto" /></TableCell> {/* Actions */}
+                                               <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+                                               <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                                               <TableCell className="text-right"><Skeleton className="h-5 w-8 ml-auto" /></TableCell>
+                                               <TableCell className="text-right"><Skeleton className="h-5 w-12 ml-auto" /></TableCell>
+                                               <TableCell className="text-right"><Skeleton className="h-5 w-16 ml-auto" /></TableCell>
                                            </TableRow>
                                        ))}
                                    </TableBody>
