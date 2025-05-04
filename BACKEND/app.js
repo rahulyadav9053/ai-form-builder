@@ -9,6 +9,5 @@ app.use(express.json());
 
 // Routes
 app.use('/api/dashboard', require('./routes/dashboard'));
-// app.use('/api/forms', require('./routes/forms')) - Add more here
 
 module.exports = app;

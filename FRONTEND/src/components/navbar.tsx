@@ -56,15 +56,32 @@ export function Navbar() {
             </Button>
           </div>
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleLogout}
-          className="font-medium text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/50 transition-colors"
-        >
-          <LogOut className="mr-2 h-4 w-4" />
-          Logout
-        </Button>
+        <div className="flex items-center gap-4 h-8">
+          {/* User Info */}
+          {user && (
+            <div className="flex items-center gap-2 h-8">
+              <img
+                src={user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || user.email || 'U')}`}
+                alt="User Avatar"
+                className="w-8 h-8 rounded-full border object-cover"
+                style={{ minWidth: 32, minHeight: 32 }}
+              />
+              <div className="flex flex-col justify-center min-w-0 h-8">
+                <span className="font-medium text-sm text-primary-foreground/90 leading-none truncate">{user.displayName || 'No Name'}</span>
+                <span className="text-xs text-muted-foreground leading-none truncate">{user.email}</span>
+              </div>
+            </div>
+          )}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleLogout}
+            className="font-medium text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/50 transition-colors"
+          >
+            <LogOut className="mr-2 h-4 w-4" />
+            Logout
+          </Button>
+        </div>
       </div>
     </nav>
   );

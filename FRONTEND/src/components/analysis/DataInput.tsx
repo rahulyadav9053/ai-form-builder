@@ -33,7 +33,7 @@ const DataInput: React.FC<DataInputProps> = ({ onDataSubmit }) => {
         return;
       }
 
-      const submissions = result.submissions.map(sub => sub.data); // adjust this line if your structure is different
+      const submissions = result.submissions;//.map(sub => sub.data); // adjust this line if your structure is different
       setJsonData(submissions);
       setLoading(false);
       setError('');

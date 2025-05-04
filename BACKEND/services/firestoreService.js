@@ -85,7 +85,23 @@ async function getDashboardSummary() {
   };
 }
 
+/**
+ * Fetches all submissions for a given formId.
+ * Returns an array of submission objects (id + data).
+ */
+async function getSubmissionsByFormId(formId) {
+  if (!formId) throw new Error('formId is required');
+  const snapshot = await db.collection('formSubmissions').where('formId', '==', formId).get();
+  const submissions = [];
+  snapshot.forEach(doc => {
+    //submissions.push({ id: doc.id, ...doc.data().elements });
+    submissions.push({ ...doc.data().data });
+  });
+  return submissions;
+}
+
 module.exports = {
   getDashboardSummary,
   db, // Export db if you want to use it elsewhere
+  getSubmissionsByFormId,
 };

@@ -64,27 +64,23 @@ export async function createEmptyFormAction(): Promise<{ docId: string } | { err
     }
 }
 
-
+// Updated: Fetch submissions from backend API
 export async function getSubmissionsByFormId(formId: string): Promise<{ submissions: any[] } | { error: string }> {
+  if (!formId) {
+    return { error: 'formId is required' };
+  }
   try {
-    console.log(`Fetching submissions for formId: ${formId}`);
-
-    const q = query(collection(db, "formSubmissions"), where("formId", "==", formId));
-    const querySnapshot = await getDocs(q);
-
-    const submissions = querySnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
-
-    return { submissions };
+    const res = await fetch(`http://localhost:4001/api/dashboard/analysis/${formId}`);
+    if (!res.ok) {
+      const errorText = await res.text();
+      return { error: `API error: ${res.status} - ${errorText}` };
+    }
+    const data = await res.json();
+    return { submissions: data.submissions };
   } catch (error: any) {
-    console.error("Error fetching submissions:", error);
-    return { error: error.message || "Failed to retrieve submissions." };
+    return { error: error.message || 'Failed to fetch submissions from backend' };
   }
 }
-
-
 
 // DEPRECATED/REPLACED by updateFormConfigAction: Keep for reference or remove if sure
 // export async function saveFormConfigAction(formConfig: FormConfig): Promise<{ success: boolean; docId?: string } | { error: string }> {
