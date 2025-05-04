@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
 import { LayoutDashboard, FileText, FormInput, LogOut } from "lucide-react";
+import { ROUTES } from "@/constants";
 
 export function Navbar() {
   const pathname = usePathname();
@@ -33,23 +33,23 @@ export function Navbar() {
           </Link>
           <div className="flex items-center gap-2">
             <Button
-              variant={pathname === "/dashboard" ? "default" : "ghost"}
+              variant={pathname === ROUTES.DASHBOARD ? "default" : "ghost"}
               size="sm"
               asChild
               className="font-medium hover:bg-primary/10 transition-colors"
             >
-              <Link href="/dashboard">
+              <Link href={ROUTES.DASHBOARD}>
                 <LayoutDashboard className="mr-2 h-4 w-4" />
                 Dashboard
               </Link>
             </Button>
             <Button
-              variant={pathname === "/forms" ? "default" : "ghost"}
+              variant={pathname === ROUTES.FORMS ? "default" : "ghost"}
               size="sm"
               asChild
               className="font-medium hover:bg-primary/10 transition-colors"
             >
-              <Link href="/forms">
+              <Link href={ROUTES.FORMS}>
                 <FileText className="mr-2 h-4 w-4" />
                 My Forms
               </Link>

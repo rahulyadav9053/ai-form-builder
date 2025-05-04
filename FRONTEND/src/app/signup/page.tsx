@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2 } from 'lucide-react';
+import { ROUTES } from '@/constants';
 
 export default function SignUpPage() {
   const [email, setEmail] = useState('');
@@ -37,7 +38,7 @@ export default function SignUpPage() {
 
     try {
       await signUp(email, password);
-      router.push('/dashboard');
+      router.push(`${ROUTES.DASHBOARD}`);
     } catch (error: any) {
       setError(error.message || 'Failed to create account');
     } finally {
@@ -110,7 +111,7 @@ export default function SignUpPage() {
         <CardFooter>
           <div className="text-sm text-center text-muted-foreground w-full">
             Already have an account?{' '}
-            <Link href="/login" className="text-primary hover:underline">
+            <Link href={`${ROUTES.LOGIN}`} className="text-primary hover:underline">
               Sign in
             </Link>
           </div>

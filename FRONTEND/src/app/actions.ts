@@ -5,6 +5,7 @@ import type { FormConfig } from '@/types/form';
 import { db } from '@/lib/firebase'; // Import Firestore instance
 import { collection, addDoc, doc, getDoc, setDoc, serverTimestamp, getDocs, QuerySnapshot, DocumentData, Timestamp, updateDoc , query, where} from 'firebase/firestore';
 import { redirect } from 'next/navigation'; // Import redirect
+import { COLLECTIONS, ENDPOINTS } from "@/constants";
 
 // Modified: Save the generated config and return the document ID
 export async function generateFormConfigAction(input: GenerateFormConfigInput): Promise<{ docId: string } | { error: string }> {
@@ -27,7 +28,7 @@ export async function generateFormConfigAction(input: GenerateFormConfigInput): 
      });
 
     // Save the newly generated config to Firestore
-    const docRef = await addDoc(collection(db, "formConfigs"), {
+    const docRef = await addDoc(collection(db, COLLECTIONS.FORM_CONFIGS), {
       config: {
         title: input.prompt.split(' ').slice(0, 5).join(' '), // Use first 5 words of prompt as title
         elements: result.formConfig
@@ -49,7 +50,7 @@ export async function generateFormConfigAction(input: GenerateFormConfigInput): 
 export async function createEmptyFormAction(): Promise<{ docId: string } | { error: string }> {
     try {
       console.log("Creating empty form config in Firestore");
-      const docRef = await addDoc(collection(db, "formConfigs"), {
+      const docRef = await addDoc(collection(db, COLLECTIONS.FORM_CONFIGS), {
         config: {
           title: 'Untitled Form',
           elements: []
@@ -70,7 +71,7 @@ export async function getSubmissionsByFormId(formId: string): Promise<{ submissi
     return { error: 'formId is required' };
   }
   try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_PATH}/api/dashboard/analysis/${formId}`);
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_PATH}${ENDPOINTS.DASHBOARD}/${formId}`);
     if (!res.ok) {
       const errorText = await res.text();
       return { error: `API error: ${res.status} - ${errorText}` };
@@ -81,26 +82,6 @@ export async function getSubmissionsByFormId(formId: string): Promise<{ submissi
     return { error: error.message || 'Failed to fetch submissions from backend' };
   }
 }
-
-// DEPRECATED/REPLACED by updateFormConfigAction: Keep for reference or remove if sure
-// export async function saveFormConfigAction(formConfig: FormConfig): Promise<{ success: boolean; docId?: string } | { error: string }> {
-//   if (!formConfig || formConfig.length === 0) {
-//     return { error: "Form configuration is empty." };
-//   }
-
-//   try {
-//     console.log("Saving form config to Firestore:", formConfig);
-//     const docRef = await addDoc(collection(db, "formConfigs"), {
-//       config: formConfig,
-//       createdAt: serverTimestamp(),
-//     });
-//     console.log("Document written with ID: ", docRef.id);
-//     return { success: true, docId: docRef.id };
-//   } catch (error: any) {
-//     console.error("Error saving form config to Firestore:", error);
-//     return { error: error.message || "Failed to save form configuration to Firebase." };
-//   }
-// }
 
 // NEW: Update an existing form configuration by ID
 export async function updateFormConfigAction(formId: string, formConfig: FormConfig): Promise<{ success: boolean } | { error: string }> {
@@ -113,7 +94,7 @@ export async function updateFormConfigAction(formId: string, formConfig: FormCon
 
     try {
         console.log(`Updating form config for ID ${formId} in Firestore:`, formConfig);
-        const docRef = doc(db, "formConfigs", formId);
+        const docRef = doc(db, COLLECTIONS.FORM_CONFIGS, formId);
         await updateDoc(docRef, {
             config: formConfig,
             // Optionally update a 'lastModified' timestamp here
@@ -140,7 +121,7 @@ export async function getFormConfigAction(formId: string): Promise<{ formConfig:
 
   try {
     console.log(`Fetching form config from Firestore with ID: ${formId}`);
-    const docRef = doc(db, "formConfigs", formId);
+    const docRef = doc(db, COLLECTIONS.FORM_CONFIGS, formId);
     const docSnap = await getDoc(docRef);
 
     if (docSnap.exists()) {
@@ -195,7 +176,7 @@ export async function saveFormResponseAction(input: SaveFormResponseInput): Prom
         console.log(`Submission duration: ${durationMs}ms`);
      }
      // Create a new document in a top-level 'formSubmissions' collection
-     const responsesCollectionRef = collection(db, "formSubmissions");
+     const responsesCollectionRef = collection(db, COLLECTIONS.FORM_SUBMISSIONS);
      const docRef = await addDoc(responsesCollectionRef, {
        formId: formId, // Link back to the form configuration
        data: responseData,
@@ -235,7 +216,7 @@ export async function getDashboardDataAction(): Promise<DashboardActionResult> {
     console.log("Fetching dashboard data...");
 
     // 1. Fetch all form configurations
-    const formsSnapshot: QuerySnapshot<DocumentData> = await getDocs(collection(db, "formConfigs"));
+    const formsSnapshot: QuerySnapshot<DocumentData> = await getDocs(collection(db, COLLECTIONS.FORM_CONFIGS));
     const totalForms = formsSnapshot.size;
     const formsMap = new Map<string, { createdAt: Date | null }>();
     formsSnapshot.forEach(doc => {
@@ -247,7 +228,7 @@ export async function getDashboardDataAction(): Promise<DashboardActionResult> {
     console.log(`Found ${totalForms} forms.`);
 
     // 2. Fetch all form responses
-    const responsesSnapshot: QuerySnapshot<DocumentData> = await getDocs(collection(db, "formSubmissions"));
+    const responsesSnapshot: QuerySnapshot<DocumentData> = await getDocs(collection(db, COLLECTIONS.FORM_SUBMISSIONS));
     const totalResponses = responsesSnapshot.size;
     console.log(`Found ${totalResponses} responses.`);
 
@@ -320,7 +301,7 @@ export async function navigateToEditPage(formId: string) {
 // NEW: Create a new form config and return the ID
 export async function createNewFormConfigAction(formConfig: FormConfig): Promise<{ docId: string } | { error: string }> {
   try {
-    const docRef = await addDoc(collection(db, "formConfigs"), {
+    const docRef = await addDoc(collection(db, COLLECTIONS.FORM_CONFIGS), {
       config: formConfig,
       createdAt: serverTimestamp(),
     });

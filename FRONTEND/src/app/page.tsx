@@ -6,6 +6,7 @@ import { useAuth } from '@/lib/auth';
 import { FormGenerator } from "@/components/form-generator";
 import { Card, CardContent} from "@/components/ui/card";
 import { Loader2 } from 'lucide-react';
+import { ROUTES } from '@/constants';
 
 export default function HomePage() {
   const { user, loading } = useAuth();
@@ -13,7 +14,7 @@ export default function HomePage() {
 
   useEffect(() => {
     if (!loading && !user) {
-      router.push('/login');
+      router.push(`${ROUTES.LOGIN}`);
     }
   }, [user, loading, router]);
 

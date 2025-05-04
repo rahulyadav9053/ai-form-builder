@@ -13,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton"; // Import Skeleton
 import { formatDuration } from '@/lib/utils'; // Import the new utility function
 import { Footer } from '@/components/footer';
 import ProtectedRoute from '@/components/protected-route';
+import { ENDPOINTS, ROUTES } from '@/constants';
 
 // Define chart config
 const chartConfig = {
@@ -51,7 +52,7 @@ export default function DashboardPage() {
     async function fetchDashboardData() {
       setLoading(true);
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_PATH}/api/dashboard`);
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_PATH}${ENDPOINTS.DASHBOARD}`);
         if (!res.ok) throw new Error('Failed to fetch dashboard data');
         const data = await res.json();
         setStats(data);
@@ -432,7 +433,7 @@ export default function DashboardPage() {
                                 className="h-8 w-8 text-primary hover:bg-primary/10"
                                 title="View Live Form"
                               >
-                                <Link href={`/forms/${form.formId}`} target="_blank" rel="noopener noreferrer">
+                                <Link href={`${ROUTES.FORM(form.formId)}`} target="_blank" rel="noopener noreferrer">
                                   <Eye className="h-4 w-4" />
                                 </Link>
                               </Button>
@@ -443,7 +444,7 @@ export default function DashboardPage() {
                                 className="h-8 w-8 text-accent hover:bg-accent/10"
                                 title="Edit Form"
                               >
-                                <Link href={`/builder/${form.formId}`}>
+                                <Link href={ROUTES.BUILDER(form.formId)}>
                                   <Edit className="h-4 w-4" />
                                 </Link>
                               </Button>
@@ -454,7 +455,7 @@ export default function DashboardPage() {
                                 className="h-8 w-8 text-accent hover:bg-accent/10"
                                 title="View Analysis"
                               >
-                                <Link href={`/analysis/${form.formId}`}>
+                                <Link href={ROUTES.ANALYSIS(form.formId)}>
                                   <LayoutDashboard className="h-4 w-4" />
                                 </Link>
                               </Button>

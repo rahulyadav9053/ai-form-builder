@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import DataVisualizer from "@/components/analysis/DataVisualizer";
 import InsightCard from "@/components/analysis/InsightCard";
+import { ENDPOINTS } from "@/constants";
 
 export default function AnalysisPage() {
   const { formId } = useParams();
@@ -18,7 +19,7 @@ export default function AnalysisPage() {
       setStatus("loading");
       setError(null);
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_PATH}/api/dashboard/analysis/${formId}`);
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_PATH}${ENDPOINTS.ANALYSIS}/${formId}`);
         if (!res.ok) {
           const errorText = await res.text();
           setError(`API error: ${res.status} - ${errorText}`);

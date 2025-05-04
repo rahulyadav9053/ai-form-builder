@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { generateFormConfigAction, createEmptyFormAction, navigateToEditPage } from '@/app/actions'; // Import createEmptyFormAction
 import { Loader2, Sparkles, Hammer, Pencil } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
+import { ROUTES } from '@/constants';
 
 
 enum GeneratorMode {
@@ -48,13 +49,13 @@ export function FormGenerator() {
          });
          setMode(GeneratorMode.Idle);
       } else {
-         router.push(`/builder/${result.docId}`);
+         router.push(ROUTES.BUILDER(result.docId));
       }
     });
   };
 
   const handleStartManualBuild = () => {
-    router.push('/builder/new');
+    router.push(ROUTES.BUILDER('new'));
   };
 
 

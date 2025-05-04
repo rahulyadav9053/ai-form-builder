@@ -30,7 +30,7 @@ export default function RootLayout({
           <AuthProvider>
             <div className="min-h-screen flex flex-col">
               <Navbar />
-              <main className="flex-1 flex items-center justify-center py-6">
+              <main className="flex-1 flex justify-center py-6">
                 <div className="container">
                   {children}
                 </div>

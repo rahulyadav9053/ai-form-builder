@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { db } from "@/lib/firebase";
@@ -9,6 +9,7 @@ import { collection, getDocs, deleteDoc, doc, query, orderBy } from "firebase/fi
 import { Trash2, Edit, ExternalLink, List } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { COLLECTIONS, ROUTES } from "@/constants";
 
 interface FormData {
   id: string;
@@ -29,7 +30,7 @@ export default function FormsPage() {
 
   const fetchForms = async () => {
     try {
-      const formsRef = collection(db, "formConfigs");
+      const formsRef = collection(db, COLLECTIONS.FORM_CONFIGS);
       const q = query(formsRef, orderBy("createdAt", "desc"));
       const querySnapshot = await getDocs(q);
 
@@ -55,7 +56,7 @@ export default function FormsPage() {
 
   const handleDelete = async (formId: string) => {
     try {
-      await deleteDoc(doc(db, "formConfigs", formId));
+      await deleteDoc(doc(db, COLLECTIONS.FORM_CONFIGS, formId));
       setForms(forms.filter(form => form.id !== formId));
       toast({
         title: "Success",
@@ -85,7 +86,7 @@ export default function FormsPage() {
         <div className="text-center py-12">
           <p className="text-muted-foreground mb-4">No forms created yet</p>
           <Button asChild>
-            <Link href="/builder/new">
+            <Link href={ROUTES.BUILDER('new')}>
               Create Your First Form
             </Link>
           </Button>
@@ -107,7 +108,7 @@ export default function FormsPage() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => router.push(`/builder/${form.id}`)}
+                      onClick={() => router.push(ROUTES.BUILDER(form.id))}
                       className="h-8 w-8 hover:bg-primary/10 transition-colors"
                     >
                       <Edit className="h-4 w-4" />
@@ -115,7 +116,7 @@ export default function FormsPage() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => router.push(`/${form.id}`)}
+                      onClick={() => router.push(ROUTES.FORM(form.id))}
                       className="h-8 w-8 hover:bg-primary/10 transition-colors"
                     >
                       <ExternalLink className="h-4 w-4" />

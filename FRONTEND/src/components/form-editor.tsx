@@ -42,6 +42,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { ROUTES } from '@/constants';
 
 interface FormEditorProps {
   initialConfig: FormConfig;
@@ -381,7 +382,7 @@ export function FormEditor({ initialConfig, formId, isNewForm = false }: FormEdi
             description: (
               <div>
                 Your new form has been created.<br />
-                <Link href={`/forms/${result.docId}`} target="_blank" rel="noopener noreferrer" className="text-primary underline hover:text-primary/80 inline-flex items-center gap-1">
+                <Link href={`${ROUTES.FORM(result.docId)}`} target="_blank" rel="noopener noreferrer" className="text-primary underline hover:text-primary/80 inline-flex items-center gap-1">
                   View Live Form <LinkIcon className="h-3 w-3" />
                 </Link>
               </div>
@@ -390,7 +391,7 @@ export function FormEditor({ initialConfig, formId, isNewForm = false }: FormEdi
             duration: 10000,
           });
           // Redirect to the new edit page
-          window.location.href = `/forms/${result.docId}`;
+          window.location.href = `${ROUTES.FORMS}${result.docId}`;
         }
         return;
       }
@@ -408,7 +409,7 @@ export function FormEditor({ initialConfig, formId, isNewForm = false }: FormEdi
           description: (
             <div>
               Your changes have been saved successfully.<br />
-              <Link href={`/forms/${formId}`} target="_blank" rel="noopener noreferrer" className="text-primary underline hover:text-primary/80 inline-flex items-center gap-1">
+              <Link href={ROUTES.BUILDER(formId)} target="_blank" rel="noopener noreferrer" className="text-primary underline hover:text-primary/80 inline-flex items-center gap-1">
                 View Live Form <LinkIcon className="h-3 w-3" />
               </Link>
             </div>
