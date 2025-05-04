@@ -44,11 +44,7 @@ export default function LoginPage() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
-            {error && (
-              <Alert variant="destructive">
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
+
             <div className="space-y-2">
               <Input
                 type="email"
@@ -83,21 +79,13 @@ export default function LoginPage() {
                 'Sign in'
               )}
             </Button>
+            {error && (
+              <Alert variant="destructive">
+                <AlertDescription>{error == "Firebase: Error (auth/invalid-credential)." ? "Invalid credentials" : error}</AlertDescription>
+              </Alert>
+            )}
           </form>
         </CardContent>
-        <CardFooter className="flex flex-col space-y-4">
-          <div className="text-sm text-center text-muted-foreground">
-            Don't have an account?{' '}
-            <Link href="/signup" className="text-primary hover:underline">
-              Sign up
-            </Link>
-          </div>
-          <div className="text-sm text-center text-muted-foreground">
-            <Link href="/reset-password" className="text-primary hover:underline">
-              Forgot your password?
-            </Link>
-          </div>
-        </CardFooter>
       </Card>
     </div>
   );
